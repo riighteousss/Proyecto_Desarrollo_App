@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.screen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,7 +21,7 @@ import androidx.compose.ui.unit.dp                            // DPs
 import androidx.lifecycle.compose.collectAsStateWithLifecycle // Observa StateFlow con lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel         // Obtiene ViewModel
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel         // Nuestro ViewModel
-F
+
 //1 Lo primero que creamos en el archivo
 @Composable                                                  // Pantalla Login conectada al VM
 fun LoginScreenVm(
@@ -91,7 +92,7 @@ private fun LoginScreen(
             Spacer(Modifier.height(12.dp)) // Separación
 
             Text(
-                text = "Pantalla de Login (demo). Usa la barra superior, el menú lateral o los botones.",
+                text = "Bienvenido a Fixsy. Usa la barra superior, el menú lateral o los botones.",
                 textAlign = TextAlign.Center // Alineación centrada
             )
             Spacer(Modifier.height(20.dp)) // Separación
@@ -113,9 +114,9 @@ private fun LoginScreen(
             para la prueba debe ser diferente al de la pagina de kotlin */
 
             AnimatedVisibility(
-                visile = emailError !=null,
+                visible = emailError != null,
                 enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically (),
+                exit = fadeOut() + shrinkVertically(),
             ){
 
             }

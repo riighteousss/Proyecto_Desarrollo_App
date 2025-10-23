@@ -3,6 +3,8 @@ package com.example.uinavegacion.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,22 +18,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun EmergencyScreen(
+fun RequestServiceScreen(
     onGoBack: () -> Unit,
-    onRequestService: (String, String, String) -> Unit = { _, _, _ -> }
+    onRequestService: (String, String, String, List<String>) -> Unit = { _, _, _, _ -> }
 ) {
-    var selectedEmergency by remember { mutableStateOf("") }
+    var selectedService by remember { mutableStateOf("") }
+    var selectedVehicle by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+    var selectedImages by remember { mutableStateOf<List<String>>(emptyList()) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    val emergencyTypes = listOf(
-        "Avería en carretera" to Icons.Filled.Warning,
-        "Accidente" to Icons.Filled.Error,
-        "Batería descargada" to Icons.Filled.BatteryAlert,
-        "Pinchazo" to Icons.Filled.TireRepair,
-        "Fallo motor" to Icons.Filled.Build,
-        "Otro" to Icons.Filled.Help
+    val serviceTypes = listOf(
+        "Mantenimiento" to Icons.Filled.Build,
+        "Reparación" to Icons.Filled.Build,
+        "Diagnóstico" to Icons.Filled.Search,
+        "Limpieza" to Icons.Filled.CleaningServices,
+        "Inspección" to Icons.Filled.Visibility,
+        "Otros" to Icons.Filled.More
+    )
+
+    val vehicleTypes = listOf(
+        "Automóvil",
+        "Motocicleta", 
+        "Camión",
+        "Bus",
+        "Otro"
     )
 
     Column(
@@ -45,7 +56,7 @@ fun EmergencyScreen(
                 .fillMaxWidth()
                 .padding(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFE53E3E)
+                containerColor = MaterialTheme.colorScheme.primary
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
@@ -64,13 +75,13 @@ fun EmergencyScreen(
                 }
                 Column {
                     Text(
-                        text = "🚨 EMERGENCIA 24/7",
+                        text = "🔧 Solicitar Servicio",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Text(
-                        text = "Servicio de emergencia disponible",
+                        text = "Solicita el servicio que necesitas",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.9f)
                     )
@@ -86,20 +97,49 @@ fun EmergencyScreen(
         ) {
             item {
                 Text(
-                    text = "Tipo de Emergencia",
+                    text = "Tipo de Servicio",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            items(emergencyTypes.size) { index ->
-                val (type, icon) = emergencyTypes[index]
-                EmergencyTypeCard(
-                    title = type,
-                    icon = icon,
-                    isSelected = selectedEmergency == type,
-                    onClick = { selectedEmergency = type }
+            item {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(serviceTypes.size) { index ->
+                        val (service, icon) = serviceTypes[index]
+                        ServiceTypeChip(
+                            title = service,
+                            icon = icon,
+                            isSelected = selectedService == service,
+                            onClick = { selectedService = service }
+                        )
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = "Tipo de Vehículo",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
+            }
+
+            item {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(vehicleTypes.size) { index ->
+                        val vehicle = vehicleTypes[index]
+                        FilterChip(
+                            onClick = { selectedVehicle = vehicle },
+                            label = { Text(vehicle) },
+                            selected = selectedVehicle == vehicle
+                        )
+                    }
+                }
             }
 
             item {
@@ -114,7 +154,7 @@ fun EmergencyScreen(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    placeholder = { Text("Describe brevemente el problema...") },
+                    placeholder = { Text("Describe el problema o servicio que necesitas...") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     maxLines = 5
@@ -123,7 +163,67 @@ fun EmergencyScreen(
 
             item {
                 Text(
-                    text = "Ubicación actual",
+                    text = "Fotos del problema",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Botón para tomar foto
+                    OutlinedButton(
+                        onClick = { 
+                            // TODO: Implementar apertura de cámara
+                            selectedImages = selectedImages + "Foto desde cámara"
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CameraAlt,
+                            contentDescription = "Cámara",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Cámara")
+                    }
+                    
+                    // Botón para galería
+                    OutlinedButton(
+                        onClick = { 
+                            // TODO: Implementar apertura de galería
+                            selectedImages = selectedImages + "Foto desde galería"
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PhotoLibrary,
+                            contentDescription = "Galería",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Galería")
+                    }
+                }
+            }
+
+            // Mostrar imágenes seleccionadas
+            if (selectedImages.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Imágenes seleccionadas: ${selectedImages.size}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            item {
+                Text(
+                    text = "Ubicación",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -135,17 +235,16 @@ fun EmergencyScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
-                        value = location,
-                        onValueChange = { location = it },
-                        placeholder = { Text("Dirección o ubicación...") },
-                        modifier = Modifier.weight(1f)
+                        value = "Mi ubicación actual",
+                        onValueChange = { },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(
                         onClick = { 
-                        // TODO: Implementar obtención de ubicación GPS
-                        location = "Ubicación obtenida por GPS"
-                    }
+                            // TODO: Implementar obtención de ubicación GPS
+                        }
                     ) {
                         Icon(
                             imageVector = Icons.Filled.LocationOn,
@@ -159,24 +258,21 @@ fun EmergencyScreen(
             item {
                 Button(
                     onClick = {
-                        if (selectedEmergency.isNotEmpty() && description.isNotEmpty()) {
-                            onRequestService(selectedEmergency, description, location)
+                        if (selectedService.isNotEmpty() && selectedVehicle.isNotEmpty() && description.isNotEmpty()) {
+                            onRequestService(selectedService, selectedVehicle, description, selectedImages)
                             showSuccessDialog = true
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE53E3E)
-                    ),
-                    enabled = selectedEmergency.isNotEmpty() && description.isNotEmpty()
+                    enabled = selectedService.isNotEmpty() && selectedVehicle.isNotEmpty() && description.isNotEmpty()
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Emergency,
+                        imageVector = Icons.Filled.Send,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("SOLICITAR EMERGENCIA", fontWeight = FontWeight.Bold)
+                    Text("SOLICITAR SERVICIO", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -191,17 +287,17 @@ fun EmergencyScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "ℹ️ Información importante",
+                            text = "ℹ️ Información del servicio",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "• Tiempo de respuesta estimado: 15-30 minutos\n" +
-                                    "• Servicio disponible 24/7\n" +
-                                    "• Costo adicional por emergencia\n" +
-                                    "• Mantén el teléfono cerca para confirmación",
+                            text = "• Tiempo de respuesta: 1-2 horas\n" +
+                                    "• Precio estimado según el servicio\n" +
+                                    "• Mecánico especializado asignado\n" +
+                                    "• Garantía en el trabajo realizado",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -216,7 +312,7 @@ fun EmergencyScreen(
             onDismissRequest = { showSuccessDialog = false },
             title = { Text("✅ Solicitud enviada") },
             text = { 
-                Text("Tu solicitud de emergencia ha sido enviada. Un mecánico se pondrá en contacto contigo en breve.") 
+                Text("Tu solicitud de servicio ha sido enviada. Un mecánico se pondrá en contacto contigo para coordinar el servicio.") 
             },
             confirmButton = {
                 TextButton(
@@ -233,14 +329,14 @@ fun EmergencyScreen(
 }
 
 @Composable
-private fun EmergencyTypeCard(
+private fun ServiceTypeChip(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer 
                            else MaterialTheme.colorScheme.surface
@@ -250,11 +346,9 @@ private fun EmergencyTypeCard(
         ),
         onClick = onClick
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = icon,
@@ -263,23 +357,15 @@ private fun EmergencyTypeCard(
                        else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = if (isSelected) MaterialTheme.colorScheme.primary 
-                       else MaterialTheme.colorScheme.onSurface
+                       else MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
-            if (isSelected) {
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "Seleccionado",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
         }
     }
 }

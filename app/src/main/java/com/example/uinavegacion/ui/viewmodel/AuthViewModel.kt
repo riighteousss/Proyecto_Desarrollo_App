@@ -61,7 +61,7 @@ class AuthViewModel(
         // Lista mutable de usuarios para la demo (se pierde al cerrar la app)
         private val USERS = mutableListOf(
             // Usuario por defecto para probar login:
-            DemoUser(name = "Demo", email = "demo@duoc.cl", phone = "12345678", pass = "Demo123!")
+            DemoUser(name = "Usuario Fixsy", email = "usuario@fixsy.cl", phone = "12345678", pass = "Fixsy123!")
         )
     }
 
@@ -71,6 +71,10 @@ class AuthViewModel(
 
     private val _register = MutableStateFlow(RegisterUiState()) // Estado interno (Registro)
     val register: StateFlow<RegisterUiState> = _register        // Exposición inmutable
+
+    // Estado de autenticación global
+    private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
     // ----------------- LOGIN: handlers y envío -----------------
 
@@ -102,6 +106,13 @@ class AuthViewModel(
             // Buscamos en la **colección en memoria** un usuario con ese email
             val user = USERS.firstOrNull { it.email.equals(s.email, ignoreCase = true) }
 
+            // Debug: imprimir información
+            println("DEBUG - Intentando login con email: ${s.email}")
+            println("DEBUG - Usuarios registrados: ${USERS.map { it.email }}")
+            println("DEBUG - Usuario encontrado: ${user?.email}")
+            println("DEBUG - Contraseña ingresada: ${s.pass}")
+            println("DEBUG - Contraseña del usuario: ${user?.pass}")
+
             // ¿Coincide email + contraseña?
             val ok = user != null && user.pass == s.pass
 
@@ -109,9 +120,14 @@ class AuthViewModel(
                 it.copy(
                     isSubmitting = false,                   // Fin carga
                     success = ok,                           // true si credenciales correctas
-                    errorMsg = if (!ok) "Credenciales inválidas" else null // Mensaje si falla
+                    errorMsg = if (!ok) {
+                        if (user == null) "Email no encontrado" else "Contraseña incorrecta"
+                    } else null // Mensaje si falla
                 )
             }
+            
+            // Actualizar estado de login global
+            _isLoggedIn.value = ok
         }
     }
 
@@ -168,30 +184,60 @@ class AuthViewModel(
             _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Loading
             delay(700)                                      // Simulamos IO
 
-          //BORRAMOS Y UNIMOS AL REPOSITORIO
-
-            val= result= repository.register(
-                name = s.name,
-                email = s.email,
-                phone = s.phone,
-                password = s.pass
-            )
-            //interpretar resultado
-
-
-            _register.update {
-                if(result.IsSuccess){
+            // Verificar si el email ya existe
+            val existingUser = USERS.firstOrNull { it.email.equals(s.email, ignoreCase = true) }
+            
+            if (existingUser != null) {
+                // Email ya existe
+                _register.update { 
+                    it.copy(
+                        isSubmitting = false, 
+                        success = false,
+                        errorMsg = "Este email ya está registrado"
+                    )
+                }
+            } else {
+                // Crear nuevo usuario y agregarlo a la lista
+                val newUser = DemoUser(
+                    name = s.name,
+                    email = s.email,
+                    phone = s.phone,
+                    pass = s.pass
+                )
+                USERS.add(newUser)
+                
+                _register.update {
                     it.copy(isSubmitting = false, success = true, errorMsg = null)
-                } else {
-                    it.copy(isSubmitting = false, success = false,
-                        errorMsg = result.exceptionOrNull()?.message?:"no se pudo registrar")
-                }// Éxito
-                it.copy(isSubmitting = false, success = true, errorMsg = null)
+                }
             }
         }
     }
 
     fun clearRegisterResult() {                             // Limpia banderas tras navegar
         _register.update { it.copy(success = false, errorMsg = null) }
+    }
+
+    // ----------------- FUNCIONES DE AUTENTICACIÓN -----------------
+
+    fun logout() {                                          // Cerrar sesión
+        _isLoggedIn.value = false
+        _login.update { LoginUiState() }                    // Limpiar estado de login
+        _register.update { RegisterUiState() }              // Limpiar estado de registro
+    }
+
+    // Función de debug para ver usuarios registrados
+    fun getRegisteredUsers(): List<String> {
+        return USERS.map { it.email }
+    }
+
+    // Obtener el nombre del usuario actualmente logueado
+    fun getCurrentUserName(): String? {
+        return if (_isLoggedIn.value) {
+            // Buscar el usuario logueado por email (necesitamos guardar el email del usuario logueado)
+            val currentEmail = _login.value.email
+            USERS.firstOrNull { it.email.equals(currentEmail, ignoreCase = true) }?.name
+        } else {
+            null
+        }
     }
 }

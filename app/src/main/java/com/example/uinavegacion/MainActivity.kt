@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import com.example.uinavegacion.ui.theme.AppTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,7 +19,10 @@ import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
 import com.example.uinavegacion.data.repository.ServiceRepository
 import com.example.uinavegacion.ui.viewmodel.ServiceViewModel
 import com.example.uinavegacion.ui.viewmodel.ServiceViewModelFactory
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uinavegacion.ui.viewmodel.ThemeViewModel
+import com.example.uinavegacion.ui.viewmodel.VehicleViewModel
+import com.example.uinavegacion.ui.viewmodel.AddressViewModel
+import com.example.uinavegacion.ui.viewmodel.RoleViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,11 +63,24 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
         factory = ServiceViewModelFactory(serviceRepository)
     )
 
+    // ViewModels adicionales
+    val themeViewModel: ThemeViewModel = viewModel()
+    val vehicleViewModel: VehicleViewModel = viewModel()
+    val addressViewModel: AddressViewModel = viewModel()
+    val roleViewModel: RoleViewModel = viewModel()
 
     val navController = rememberNavController() // Controlador de navegación
-    MaterialTheme { // Provee colores/tipografías Material 3
+    AppTheme { // Tema personalizado con colores naranja y azul
         Surface(color = MaterialTheme.colorScheme.background) { // Fondo general
-            AppNavGraph(navController = navController, authViewModel = authViewModel, serviceViewModel = serviceViewModel) // Carga el NavHost + Scaffold + Drawer
+            AppNavGraph(
+                navController = navController, 
+                authViewModel = authViewModel, 
+                serviceViewModel = serviceViewModel,
+                themeViewModel = themeViewModel,
+                vehicleViewModel = vehicleViewModel,
+                addressViewModel = addressViewModel,
+                roleViewModel = roleViewModel
+            ) // Carga el NavHost + Scaffold + Drawer
         }
     }
 }
