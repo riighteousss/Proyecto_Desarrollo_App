@@ -23,8 +23,8 @@ import androidx.compose.ui.text.style.TextOverflow
 fun AppTopBar(
     onOpenDrawer: () -> Unit, // Abre el drawer (hamburguesa)
     onHome: () -> Unit,       // Navega a Home
-    onLogin: () -> Unit,      // Navega a Login
-    onRegister: () -> Unit    // Navega a Registro
+    onUserAction: () -> Unit, // Acción del usuario (login/perfil)
+    isLoggedIn: Boolean = false // Estado de autenticación
 ) {
     //lo que hace es crear una variable de estado recordada que le dice a la interfaz
     // si el menú desplegable de 3 puntitos debe estar visible (true) o oculto (false).
@@ -52,11 +52,12 @@ fun AppTopBar(
             IconButton(onClick = onHome) { // Ir a Home
                 Icon(Icons.Filled.Home, contentDescription = "Home") // Ícono Home
             }
-            IconButton(onClick = onLogin) { // Ir a Login
-                Icon(Icons.Filled.AccountCircle, contentDescription = "Login") // Ícono Login
-            }
-            IconButton(onClick = onRegister) { // Ir a Registro
-                Icon(Icons.Filled.Person, contentDescription = "Registro") // Ícono Registro
+            // Solo un icono de usuario que cambia según el estado
+            IconButton(onClick = onUserAction) { // Acción del usuario
+                Icon(
+                    imageVector = if (isLoggedIn) Icons.Filled.Person else Icons.Filled.AccountCircle,
+                    contentDescription = if (isLoggedIn) "Perfil" else "Iniciar sesión"
+                )
             }
             IconButton(onClick = { showMenu = true }) { // Abre menú overflow
                 Icon(Icons.Filled.MoreVert, contentDescription = "Más") // Ícono 3 puntitos
@@ -69,13 +70,9 @@ fun AppTopBar(
                     text = { Text("Home") }, // Texto opción
                     onClick = { showMenu = false; onHome() } // Navega y cierra
                 )
-                DropdownMenuItem( // Opción Login
-                    text = { Text("Login") },
-                    onClick = { showMenu = false; onLogin() }
-                )
-                DropdownMenuItem( // Opción Registro
-                    text = { Text("Registro") },
-                    onClick = { showMenu = false; onRegister() }
+                DropdownMenuItem( // Opción Usuario
+                    text = { Text(if (isLoggedIn) "Perfil" else "Iniciar sesión") },
+                    onClick = { showMenu = false; onUserAction() }
                 )
             }
         }
