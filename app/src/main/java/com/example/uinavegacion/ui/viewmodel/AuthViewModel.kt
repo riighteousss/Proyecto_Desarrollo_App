@@ -10,6 +10,30 @@ import kotlinx.coroutines.flow.update                      // Helper para actual
 import kotlinx.coroutines.launch                            // Lanzar corrutinas
 import com.example.uinavegacion.domain.validation.*             // Importamos las funciones de validación
 
+/**
+ * AUTHVIEWMODEL - MANEJO DE AUTENTICACIÓN
+ * 
+ * 🎯 PUNTO CLAVE: Aquí está toda la LÓGICA DE AUTENTICACIÓN
+ * - Maneja login, registro y logout de usuarios
+ * - StateFlow para datos reactivos (se actualiza automáticamente la UI)
+ * - viewModelScope para operaciones asíncronas
+ * - Datos en memoria (lista de usuarios de prueba)
+ * 
+ * 📊 ESTADOS PRINCIPALES:
+ * - login: LoginUiState → Estado del login
+ * - register: RegisterUiState → Estado del registro
+ * - isLoggedIn: Boolean → Si el usuario está logueado
+ * 
+ * 🔧 FUNCIONES PRINCIPALES:
+ * - onLoginEmailChange() → Maneja cambios en email
+ * - onLoginPasswordChange() → Maneja cambios en contraseña
+ * - onLoginSubmit() → Ejecuta el login
+ * - onRegisterSubmit() → Ejecuta el registro
+ * 
+ * 💾 DATOS: Los usuarios se guardan en una lista en memoria
+ * (En una app real se usaría una base de datos)
+ */
+
 // ----------------- ESTADOS DE UI (observable con StateFlow) -----------------
 
 data class LoginUiState(                                   // Estado de la pantalla Login
@@ -61,7 +85,9 @@ class AuthViewModel(
         // Lista mutable de usuarios para la demo (se pierde al cerrar la app)
         private val USERS = mutableListOf(
             // Usuario por defecto para probar login:
-            DemoUser(name = "Usuario Fixsy", email = "usuario@fixsy.cl", phone = "12345678", pass = "Fixsy123!")
+            DemoUser(name = "Usuario Fixsy", email = "usuario@fixsy.cl", phone = "12345678", pass = "Fixsy123!"),
+            // Usuario de prueba simple:
+            DemoUser(name = "Usuario Prueba", email = "test@test.com", phone = "+56 9 1234 5678", pass = "123456")
         )
     }
 
@@ -78,11 +104,19 @@ class AuthViewModel(
 
     // ----------------- LOGIN: handlers y envío -----------------
 
+    /**
+     * Maneja cambios en el campo de email durante el login
+     * Valida el formato del email y actualiza el estado
+     */
     fun onLoginEmailChange(value: String) {                 // Handler cuando cambia el email
         _login.update { it.copy(email = value, emailError = validateEmail(value)) } // Guardamos + validamos
         recomputeLoginCanSubmit()                           // Recalculamos habilitado
     }
 
+    /**
+     * Maneja cambios en el campo de contraseña durante el login
+     * No valida la contraseña en login (solo en registro)
+     */
     fun onLoginPassChange(value: String) {                  // Handler cuando cambia la contraseña
         _login.update { it.copy(pass = value) }             // Guardamos (sin validar fuerza aquí)
         recomputeLoginCanSubmit()                           // Recalculamos habilitado
@@ -96,6 +130,11 @@ class AuthViewModel(
         _login.update { it.copy(canSubmit = can) }          // Actualizamos el flag
     }
 
+    /**
+     * Procesa el intento de login del usuario
+     * Busca el usuario en la colección en memoria y valida las credenciales
+     * Actualiza el estado de autenticación global
+     */
     fun submitLogin() {                                     // Acción de login (simulación async)
         val s = _login.value                                // Snapshot del estado
         if (!s.canSubmit || s.isSubmitting) return          // Si no se puede o ya está cargando, salimos
