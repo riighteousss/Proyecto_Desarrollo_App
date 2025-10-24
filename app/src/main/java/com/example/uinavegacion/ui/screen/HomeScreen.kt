@@ -1,5 +1,9 @@
 package com.example.uinavegacion.ui.screen
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,11 +19,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uinavegacion.ui.viewmodel.ProfileViewModel
+import com.example.uinavegacion.ui.components.SimpleMapView
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import com.example.uinavegacion.R
+import androidx.compose.ui.graphics.vector.ImageVector
 
+/**
+ * HOMESCREEN - PANTALLA PRINCIPAL DE LA APLICACIÓN
+ * 
+ * 🎯 PUNTO CLAVE: Esta es la PANTALLA PRINCIPAL de la aplicación
+ * - Muestra servicios disponibles (Emergencia, Mantenimiento, etc.)
+ * - Estadísticas de la app (mecánicos, servicios, calificación)
+ * - Botones de login/registro si no está logueado
+ * - Botón de perfil si está logueado
+ * 
+ * 📱 ELEMENTOS PRINCIPALES:
+ * - Header con información del usuario y foto de perfil
+ * - Barra de búsqueda
+ * - Sección de mecánicos cercanos
+ * - Botones de acción principales
+ * - Sección de servicios rápidos
+ * 
+ * La pantalla se adapta según el estado de autenticación del usuario.
+ */
 @Composable
 fun HomeScreen(
     onGoLogin: () -> Unit,
@@ -31,8 +63,16 @@ fun HomeScreen(
     onGoEmergency: () -> Unit = {},
     onGoRequestService: () -> Unit = {},
     onGoFavorites: () -> Unit = {},
-    onGoAppointments: () -> Unit = {}
+    onGoAppointments: () -> Unit = {},
+    onGoMap: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val profileViewModel: ProfileViewModel = viewModel()
+    val userProfile by profileViewModel.userProfile.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        profileViewModel.loadProfile(context)
+    }
     var searchQuery by remember { mutableStateOf("") }
     val bg = MaterialTheme.colorScheme.surfaceVariant
 
@@ -45,7 +85,13 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             // Header con banner oscuro y avatar
-            HeaderBanner(userName = userName, isLoggedIn = isLoggedIn)
+            HeaderBanner(
+                userName = userName, 
+                isLoggedIn = isLoggedIn,
+                profileImageUri = userProfile.profileImageUri,
+                onGoLogin = onGoLogin,
+                onGoProfile = onGoSettings
+            )
             
             // Barra de búsqueda fija
             SearchBar(
@@ -64,9 +110,19 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Sección de mecánicos cercanos con mapa
+                // Mapa pequeño
                 item {
-                    NearbyMechanicsSection()
+                    Column {
+                        Text(
+                            text = "📍 Ubicación",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        SimpleMapView(
+                            onMapClick = onGoMap
+                        )
+                    }
                 }
                 
                 // Botones de acción en grid 2x2
@@ -77,7 +133,8 @@ fun HomeScreen(
                         onGoEmergency = onGoEmergency,
                         onGoRequestService = onGoRequestService,
                         onGoFavorites = onGoFavorites,
-                        onGoAppointments = onGoAppointments
+                        onGoAppointments = onGoAppointments,
+                        isLoggedIn = isLoggedIn
                     )
                 }
                 
@@ -103,7 +160,13 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeaderBanner(userName: String? = null, isLoggedIn: Boolean = false) {
+private fun HeaderBanner(
+    userName: String? = null, 
+    isLoggedIn: Boolean = false,
+    profileImageUri: String? = null,
+    onGoLogin: () -> Unit = {},
+    onGoProfile: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,9 +186,20 @@ private fun HeaderBanner(userName: String? = null, isLoggedIn: Boolean = false) 
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar circular más pequeño
+            // Logo de Fixsy
+            Text(
+                text = "🔧",
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+            )
+            // Avatar circular clickeable
             Card(
-                modifier = Modifier.size(50.dp),
+                modifier = Modifier
+                    .size(50.dp)
+                    .clickable { 
+                        if (isLoggedIn) onGoProfile() else onGoLogin() 
+                    },
                 shape = CircleShape,
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -136,12 +210,23 @@ private fun HeaderBanner(userName: String? = null, isLoggedIn: Boolean = false) 
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = "Usuario",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (isLoggedIn && profileImageUri != null) {
+                        AsyncImage(
+                            model = profileImageUri,
+                            contentDescription = "Foto de perfil",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = if (isLoggedIn) "Perfil" else "Iniciar sesión",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
             
@@ -149,14 +234,14 @@ private fun HeaderBanner(userName: String? = null, isLoggedIn: Boolean = false) 
             
             Column {
                 Text(
-                    text = if (isLoggedIn && userName != null) "¡Hola $userName!" else "¡Hola Usuario!",
+                    text = if (isLoggedIn && userName != null) "¡Hola $userName!" else "¡Hola!",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
                 
                 Text(
-                    text = "Encuentra el mecánico perfecto",
+                    text = if (isLoggedIn) "Encuentra el mecánico perfecto" else "Inicia sesión para acceder a todos los servicios",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                 )
@@ -241,16 +326,45 @@ private fun NearbyMechanicsSection() {
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Lista de mecánicos cercanos
-        val mechanics = listOf(
-            "Taller AutoMax" to "0.5 km - Disponible",
-            "Serviteca Central" to "1.2 km - Ocupado",
-            "Mecánica Express" to "2.1 km - Disponible"
-        )
+        // Lista de mecánicos cercanos vacía por defecto
+        val mechanics = remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
         
-        mechanics.forEach { (name, status) ->
-            MechanicItem(name = name, status = status)
-            Spacer(modifier = Modifier.height(4.dp))
+        if (mechanics.value.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.LocationOff,
+                        contentDescription = "Sin mecánicos",
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "No hay mecánicos cercanos",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Intenta ampliar el rango de búsqueda",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            mechanics.value.forEach { (name, status) ->
+                MechanicItem(name = name, status = status)
+                Spacer(modifier = Modifier.height(4.dp))
+            }
         }
     }
 }
@@ -315,7 +429,8 @@ private fun ActionButtonsGrid(
     onGoEmergency: () -> Unit = {},
     onGoRequestService: () -> Unit = {},
     onGoFavorites: () -> Unit = {},
-    onGoAppointments: () -> Unit = {}
+    onGoAppointments: () -> Unit = {},
+    isLoggedIn: Boolean = false
 ) {
     Column {
         Text(
@@ -339,7 +454,8 @@ private fun ActionButtonsGrid(
                     icon = Icons.Filled.LocalShipping,
                     backgroundColor = Color(0xFFE53E3E),
                     onClick = { onGoEmergency() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    requiresAuth = false // Las emergencias no requieren autenticación
                 )
                 ActionButton(
                     title = "Solicitar",
@@ -347,7 +463,9 @@ private fun ActionButtonsGrid(
                     icon = Icons.Filled.Person,
                     backgroundColor = Color(0xFF1A1A1A),
                     onClick = { onGoRequestService() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    requiresAuth = true,
+                    isLoggedIn = isLoggedIn
                 )
             }
             
@@ -362,7 +480,9 @@ private fun ActionButtonsGrid(
                     icon = Icons.Filled.Star,
                     backgroundColor = Color(0xFFFFD700),
                     onClick = { onGoFavorites() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    requiresAuth = true,
+                    isLoggedIn = isLoggedIn
                 )
                 ActionButton(
                     title = "Agenda",
@@ -370,9 +490,12 @@ private fun ActionButtonsGrid(
                     icon = Icons.Filled.CalendarToday,
                     backgroundColor = Color(0xFF4CAF50),
                     onClick = { onGoAppointments() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    requiresAuth = true,
+                    isLoggedIn = isLoggedIn
                 )
             }
+            
         }
     }
 }
@@ -384,14 +507,24 @@ private fun ActionButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     backgroundColor: Color,
     onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    requiresAuth: Boolean = false,
+    isLoggedIn: Boolean = false
 ) {
+    val isDisabled = requiresAuth && !isLoggedIn
+    val displayColor = if (isDisabled) backgroundColor.copy(alpha = 0.5f) else backgroundColor
+    
     Card(
         modifier = modifier
             .height(90.dp)
-            .clickable { onClick() },
+            .animateContentSize() // Animación de contenido
+            .clickable { 
+                if (!isDisabled) {
+                    onClick()
+                }
+            },
         colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
+            containerColor = displayColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp)
@@ -403,15 +536,24 @@ private fun ActionButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
-            )
+            if (isDisabled) {
+                Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = "Bloqueado",
+                    tint = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = title,
+                text = if (isDisabled) "Inicia sesión" else title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
@@ -421,7 +563,7 @@ private fun ActionButton(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = subtitle,
+                text = if (isDisabled) "Requerido" else subtitle,
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center,
@@ -611,15 +753,18 @@ private fun StatisticsSection() {
             ) {
                 StatItem(
                     number = "150+",
-                    label = "Mecánicos"
+                    label = "Mecánicos",
+                    iconRes = R.drawable.ic_launcher_foreground
                 )
                 StatItem(
                     number = "500+",
-                    label = "Servicios"
+                    label = "Servicios",
+                    iconRes = R.drawable.ic_launcher_background
                 )
                 StatItem(
                     number = "4.8★",
-                    label = "Calificación"
+                    label = "Calificación",
+                    iconRes = R.drawable.ic_launcher_foreground
                 )
             }
         }
@@ -630,12 +775,33 @@ private fun StatisticsSection() {
 @Composable
 private fun StatItem(
     number: String,
-    label: String
+    label: String,
+    iconRes: Int? = null
 ) {
+    // Animación de entrada
+    val alpha by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(800),
+        label = "alpha"
+    )
+    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp)
+        modifier = Modifier
+            .padding(8.dp)
+            .alpha(alpha) // Aplicar animación de transparencia
+            .animateContentSize() // Animación de contenido
     ) {
+        if (iconRes != null) {
+            Icon(
+                Icons.Filled.Person,
+                contentDescription = label,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+        
         Text(
             text = number,
             style = MaterialTheme.typography.headlineSmall,

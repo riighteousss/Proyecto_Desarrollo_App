@@ -16,16 +16,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.uinavegacion.ui.viewmodel.RequestFormViewModel
 
 @Composable
 fun RequestServiceScreen(
     onGoBack: () -> Unit,
-    onRequestService: (String, String, String, List<String>) -> Unit = { _, _, _, _ -> }
+    onRequestService: (String, String, String, List<String>) -> Unit = { _, _, _, _ -> },
+    onGoCamera: () -> Unit = {},
+    onSaveToHistory: (String, String, String, List<String>) -> Unit = { _, _, _, _ -> },
+    requestFormViewModel: RequestFormViewModel
 ) {
-    var selectedService by remember { mutableStateOf("") }
-    var selectedVehicle by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    // Estados del ViewModel (persistentes entre navegaciones)
+    val selectedService by requestFormViewModel.selectedService.collectAsStateWithLifecycle()
+    val selectedVehicle by requestFormViewModel.selectedVehicle.collectAsStateWithLifecycle()
+    val description by requestFormViewModel.description.collectAsStateWithLifecycle()
+    val selectedImages by requestFormViewModel.selectedImages.collectAsStateWithLifecycle()
+    val isFormValid by requestFormViewModel.isFormValid.collectAsStateWithLifecycle()
+    
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     val serviceTypes = listOf(
@@ -113,7 +121,7 @@ fun RequestServiceScreen(
                             title = service,
                             icon = icon,
                             isSelected = selectedService == service,
-                            onClick = { selectedService = service }
+                            onClick = { requestFormViewModel.updateService(service) }
                         )
                     }
                 }
@@ -134,7 +142,7 @@ fun RequestServiceScreen(
                     items(vehicleTypes.size) { index ->
                         val vehicle = vehicleTypes[index]
                         FilterChip(
-                            onClick = { selectedVehicle = vehicle },
+                            onClick = { requestFormViewModel.updateVehicle(vehicle) },
                             label = { Text(vehicle) },
                             selected = selectedVehicle == vehicle
                         )
@@ -153,7 +161,7 @@ fun RequestServiceScreen(
             item {
                 OutlinedTextField(
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = { requestFormViewModel.updateDescription(it) },
                     placeholder = { Text("Describe el problema o servicio que necesitas...") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
@@ -177,8 +185,7 @@ fun RequestServiceScreen(
                     // Botón para tomar foto
                     OutlinedButton(
                         onClick = { 
-                            // TODO: Implementar apertura de cámara
-                            selectedImages = selectedImages + "Foto desde cámara"
+                            onGoCamera()
                         },
                         modifier = Modifier.weight(1f)
                     ) {
@@ -195,7 +202,7 @@ fun RequestServiceScreen(
                     OutlinedButton(
                         onClick = { 
                             // TODO: Implementar apertura de galería
-                            selectedImages = selectedImages + "Foto desde galería"
+                            requestFormViewModel.addImage("Foto desde galería")
                         },
                         modifier = Modifier.weight(1f)
                     ) {
@@ -258,13 +265,18 @@ fun RequestServiceScreen(
             item {
                 Button(
                     onClick = {
-                        if (selectedService.isNotEmpty() && selectedVehicle.isNotEmpty() && description.isNotEmpty()) {
+                        if (isFormValid) {
+                            // Guardar en el historial
+                            onSaveToHistory(selectedService, selectedVehicle, description, selectedImages)
+                            // Procesar solicitud
                             onRequestService(selectedService, selectedVehicle, description, selectedImages)
+                            // Limpiar formulario después de enviar
+                            requestFormViewModel.clearForm()
                             showSuccessDialog = true
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = selectedService.isNotEmpty() && selectedVehicle.isNotEmpty() && description.isNotEmpty()
+                    enabled = isFormValid
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Send,

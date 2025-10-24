@@ -22,41 +22,8 @@ fun FavoritesScreen(
     onGoBack: () -> Unit,
     onContactMechanic: (String) -> Unit = { _ -> }
 ) {
-    // Lista de mecánicos favoritos (en una app real vendría de un ViewModel)
-    val favoriteMechanics = remember {
-        listOf(
-            MechanicFavorite(
-                id = "1",
-                name = "Carlos Mendoza",
-                specialty = "Motor y transmisión",
-                rating = 4.8f,
-                distance = "2.3 km",
-                phone = "+56 9 1234 5678",
-                isAvailable = true,
-                lastService = "Hace 2 meses"
-            ),
-            MechanicFavorite(
-                id = "2", 
-                name = "Ana Rodríguez",
-                specialty = "Frenos y suspensión",
-                rating = 4.9f,
-                distance = "1.8 km",
-                phone = "+56 9 8765 4321",
-                isAvailable = false,
-                lastService = "Hace 1 mes"
-            ),
-            MechanicFavorite(
-                id = "3",
-                name = "Miguel Torres",
-                specialty = "Electricidad automotriz",
-                rating = 4.7f,
-                distance = "3.1 km", 
-                phone = "+56 9 5555 1234",
-                isAvailable = true,
-                lastService = "Hace 3 semanas"
-            )
-        )
-    }
+    // Lista de mecánicos favoritos vacía por defecto
+    val favoriteMechanics = remember { mutableStateOf<List<MechanicFavorite>>(emptyList()) }
 
     Column(
         modifier = Modifier
@@ -102,7 +69,7 @@ fun FavoritesScreen(
             }
         }
 
-        if (favoriteMechanics.isEmpty()) {
+        if (favoriteMechanics.value.isEmpty()) {
             // Pantalla vacía
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -138,7 +105,7 @@ fun FavoritesScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(favoriteMechanics) { mechanic ->
+                items(favoriteMechanics.value) { mechanic ->
                     FavoriteMechanicCard(
                         mechanic = mechanic,
                         onContact = { onContactMechanic(mechanic.id) }

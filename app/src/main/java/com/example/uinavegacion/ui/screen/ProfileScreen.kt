@@ -31,6 +31,7 @@ fun ProfileScreen(
     onGoHelp: () -> Unit = {},
     onToggleDarkMode: () -> Unit = {},
     onLogout: () -> Unit = {},
+    onEditProfile: () -> Unit = {},
     isDarkMode: Boolean = false
 ) {
     val requestsState = serviceViewModel?.requests?.collectAsState(initial = emptyList())
@@ -65,6 +66,12 @@ fun ProfileScreen(
                     ProfileSection(
                         title = "",
                         items = listOf(
+                            ProfileItem(
+                                title = "Editar Perfil",
+                                subtitle = "Cambiar foto, nombre y datos personales",
+                                icon = Icons.Filled.Edit,
+                                onClick = onEditProfile
+                            ),
                             ProfileItem(
                                 title = "Configuraciones",
                                 subtitle = "Ver solicitudes, vehículos y direcciones",

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons                  // Íconos Materia
 import androidx.compose.material.icons.filled.Visibility      // Ícono mostrar
 import androidx.compose.material.icons.filled.VisibilityOff   // Ícono ocultar
 import androidx.compose.material3.*                           // Material 3
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*                             // remember, Composable
 import androidx.compose.ui.Alignment                          // Alineaciones
 import androidx.compose.ui.Modifier                           // Modificador
@@ -15,6 +16,10 @@ import androidx.compose.ui.unit.dp                            // DPs
 import androidx.lifecycle.compose.collectAsStateWithLifecycle // Observa StateFlow
 import androidx.lifecycle.viewmodel.compose.viewModel         // Obtiene VM
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel         // ViewModel
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import com.example.uinavegacion.R
+import coil.compose.AsyncImage
 
 //1 creamos la union con el viewmodel creado
 @Composable                                                  // Pantalla Registro conectada al VM
@@ -98,6 +103,13 @@ private fun RegisterScreen(
     ) {
         // 5 modificamos el parametro de la columna
         Column(modifier = Modifier.fillMaxWidth()) { // Estructura vertical
+            // Logo de Fixsy
+            Text(
+                text = "🔧",
+                style = MaterialTheme.typography.displayLarge
+            )
+            Spacer(Modifier.height(16.dp)) // Separación
+            
             Text(
                 text = "Registro",
                 style = MaterialTheme.typography.headlineSmall // Título

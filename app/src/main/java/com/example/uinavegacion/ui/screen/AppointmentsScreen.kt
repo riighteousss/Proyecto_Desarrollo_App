@@ -21,39 +21,21 @@ import java.util.*
 @Composable
 fun AppointmentsScreen(
     onGoBack: () -> Unit,
-    onBookAppointment: () -> Unit = {}
+    onBookAppointment: () -> Unit = {},
+    isLoggedIn: Boolean = false
 ) {
-    // Lista de citas (en una app real vendría de un ViewModel)
-    val appointments = remember {
-        listOf(
-            Appointment(
-                id = "1",
-                mechanicName = "Carlos Mendoza",
-                service = "Cambio de aceite",
-                date = "2024-01-15",
-                time = "10:00",
-                status = "Confirmada",
-                location = "Taller AutoMax - Av. Principal 123"
-            ),
-            Appointment(
-                id = "2",
-                mechanicName = "Ana Rodríguez", 
-                service = "Revisión de frenos",
-                date = "2024-01-18",
-                time = "14:30",
-                status = "Pendiente",
-                location = "Serviteca Central - Calle Secundaria 456"
-            ),
-            Appointment(
-                id = "3",
-                mechanicName = "Miguel Torres",
-                service = "Diagnóstico eléctrico",
-                date = "2024-01-12",
-                time = "09:15",
-                status = "Completada",
-                location = "Mecánica Express - Boulevard Norte 789"
-            )
-        )
+    // Lista de citas vacía por defecto
+    val appointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
+    
+    // Estado para filtros
+    var selectedFilter by remember { mutableStateOf("Todas") }
+    
+    // Filtrar citas según el filtro seleccionado
+    val filteredAppointments = when (selectedFilter) {
+        "Confirmadas" -> appointments.value.filter { it.status == "Confirmada" }
+        "Pendientes" -> appointments.value.filter { it.status == "Pendiente" }
+        "Completadas" -> appointments.value.filter { it.status == "Completada" }
+        else -> appointments.value
     }
 
     Column(
@@ -106,66 +88,138 @@ fun AppointmentsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Botón para nueva cita
-            item {
-                Button(
-                    onClick = onBookAppointment,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "Nueva cita",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Nueva Cita", fontWeight = FontWeight.Bold)
+            // Botón para nueva cita - solo si está logueado
+            if (isLoggedIn) {
+                item {
+                    Button(
+                        onClick = onBookAppointment,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Nueva cita",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Nueva Cita", fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Lock,
+                                contentDescription = "Bloqueado",
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Inicia sesión para agendar citas",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Necesitas estar registrado para gestionar tus citas",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
 
-            // Filtros por estado
-            item {
-                Text(
-                    text = "Filtrar por estado:",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            // Filtros por estado - solo si hay citas
+            if (appointments.value.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Filtrar por estado:",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        onClick = { },
-                        label = { Text("Todas") },
-                        selected = true
-                    )
-                    FilterChip(
-                        onClick = { },
-                        label = { Text("Confirmadas") },
-                        selected = false
-                    )
-                    FilterChip(
-                        onClick = { },
-                        label = { Text("Pendientes") },
-                        selected = false
-                    )
-                    FilterChip(
-                        onClick = { },
-                        label = { Text("Completadas") },
-                        selected = false
-                    )
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            onClick = { selectedFilter = "Todas" },
+                            label = { Text("Todas") },
+                            selected = selectedFilter == "Todas"
+                        )
+                        FilterChip(
+                            onClick = { selectedFilter = "Confirmadas" },
+                            label = { Text("Confirmadas") },
+                            selected = selectedFilter == "Confirmadas"
+                        )
+                        FilterChip(
+                            onClick = { selectedFilter = "Pendientes" },
+                            label = { Text("Pendientes") },
+                            selected = selectedFilter == "Pendientes"
+                        )
+                        FilterChip(
+                            onClick = { selectedFilter = "Completadas" },
+                            label = { Text("Completadas") },
+                            selected = selectedFilter == "Completadas"
+                        )
+                    }
                 }
             }
 
-            // Lista de citas
-            items(appointments) { appointment ->
-                AppointmentCard(
-                    appointment = appointment,
-                    onCancel = { /* Cancelar cita */ },
-                    onReschedule = { /* Reprogramar cita */ },
-                    onContact = { /* Contactar mecánico */ }
-                )
+            // Lista de citas filtradas
+            if (filteredAppointments.isNotEmpty()) {
+                items(filteredAppointments) { appointment ->
+                    AppointmentCard(
+                        appointment = appointment,
+                        onCancel = { /* Cancelar cita */ },
+                        onReschedule = { /* Reprogramar cita */ },
+                        onContact = { /* Contactar mecánico */ }
+                    )
+                }
+            } else if (appointments.value.isEmpty() && isLoggedIn) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarToday,
+                                contentDescription = "Sin citas",
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No tienes citas programadas",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Agenda tu primera cita con un mecánico",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
             }
         }
     }

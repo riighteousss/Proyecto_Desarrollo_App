@@ -13,17 +13,32 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.data.repository.ServiceRepository
+import com.example.uinavegacion.data.repository.VehicleRepository
+import com.example.uinavegacion.data.repository.AddressRepository
+import com.example.uinavegacion.data.repository.MechanicRepository
 import com.example.uinavegacion.navigation.AppNavGraph
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel
 import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
-import com.example.uinavegacion.data.repository.ServiceRepository
 import com.example.uinavegacion.ui.viewmodel.ServiceViewModel
 import com.example.uinavegacion.ui.viewmodel.ServiceViewModelFactory
 import com.example.uinavegacion.ui.viewmodel.ThemeViewModel
 import com.example.uinavegacion.ui.viewmodel.VehicleViewModel
 import com.example.uinavegacion.ui.viewmodel.AddressViewModel
+import com.example.uinavegacion.ui.viewmodel.MechanicViewModel
 import com.example.uinavegacion.ui.viewmodel.RoleViewModel
+import com.example.uinavegacion.ui.viewmodel.RequestFormViewModel
 
+/**
+ * MAIN ACTIVITY - ACTIVIDAD PRINCIPAL
+ * 
+ * 🎯 PUNTO CLAVE: Esta es la ACTIVIDAD PRINCIPAL de la aplicación
+ * - Extiende ComponentActivity (nueva forma de crear actividades)
+ * - setContent{} es donde se define toda la UI con Jetpack Compose
+ * - AppRoot() maneja toda la lógica de la aplicación
+ * 
+ * 📱 FLUJO: MainActivity → AppRoot → NavGraph → Pantallas
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,24 +65,27 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
 
     // Instancia BD y dependencias
     val db = AppDatabase.getInstance(context)
-    val userDao = db.userDao()
-    val userRepository = UserRepository(userDao)
+    
+    // Repositorios
+    val userRepository = UserRepository(db.userDao())
+    val serviceRepository = ServiceRepository(db.serviceRequestDao())
+    val vehicleRepository = VehicleRepository(db.vehicleDao())
+    val addressRepository = AddressRepository(db.addressDao())
+    val mechanicRepository = MechanicRepository(db.mechanicDao())
+    
+    // ViewModels
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(userRepository)
     )
-
-    // Servicio de solicitudes
-    val serviceDao = db.serviceRequestDao()
-    val serviceRepository = ServiceRepository(serviceDao)
     val serviceViewModel: ServiceViewModel = viewModel(
         factory = ServiceViewModelFactory(serviceRepository)
     )
-
-    // ViewModels adicionales
+    val vehicleViewModel: VehicleViewModel = viewModel { VehicleViewModel(vehicleRepository) }
+    val addressViewModel: AddressViewModel = viewModel { AddressViewModel(addressRepository) }
+    val mechanicViewModel: MechanicViewModel = viewModel { MechanicViewModel(mechanicRepository) }
     val themeViewModel: ThemeViewModel = viewModel()
-    val vehicleViewModel: VehicleViewModel = viewModel()
-    val addressViewModel: AddressViewModel = viewModel()
     val roleViewModel: RoleViewModel = viewModel()
+    val requestFormViewModel: RequestFormViewModel = viewModel()
 
     val navController = rememberNavController() // Controlador de navegación
     AppTheme { // Tema personalizado con colores naranja y azul
@@ -79,7 +97,10 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
                 themeViewModel = themeViewModel,
                 vehicleViewModel = vehicleViewModel,
                 addressViewModel = addressViewModel,
-                roleViewModel = roleViewModel
+                mechanicViewModel = mechanicViewModel,
+                roleViewModel = roleViewModel,
+                db = db,
+                requestFormViewModel = requestFormViewModel
             ) // Carga el NavHost + Scaffold + Drawer
         }
     }

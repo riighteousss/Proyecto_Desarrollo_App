@@ -23,6 +23,10 @@ sealed class Route(val path: String) { // Cada objeto representa una pantalla
     data object MechanicHome     : Route("mechanic_home")
     data object AdminHome        : Route("admin_home")
     data object AdminAuth        : Route("admin_auth")
+    data object EditProfile      : Route("edit_profile")
+    data object Map              : Route("map")
+    data object Camera          : Route("camera")
+    data object RequestHistory  : Route("request_history")
 }
 
 /*

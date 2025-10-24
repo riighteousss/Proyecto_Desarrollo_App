@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons                  // Íconos Materia
 import androidx.compose.material.icons.filled.Visibility      // Ícono mostrar contraseña
 import androidx.compose.material.icons.filled.VisibilityOff   // Ícono ocultar contraseña
 import androidx.compose.material3.*                           // Material 3
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*                             // remember y Composable
 import androidx.compose.ui.Alignment                          // Alineaciones
 import androidx.compose.ui.Modifier                           // Modificador
@@ -21,6 +22,10 @@ import androidx.compose.ui.unit.dp                            // DPs
 import androidx.lifecycle.compose.collectAsStateWithLifecycle // Observa StateFlow con lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel         // Obtiene ViewModel
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel         // Nuestro ViewModel
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import com.example.uinavegacion.R
+import coil.compose.AsyncImage
 
 //1 Lo primero que creamos en el archivo
 @Composable                                                  // Pantalla Login conectada al VM
@@ -85,6 +90,13 @@ private fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),              // Ancho completo
             horizontalAlignment = Alignment.CenterHorizontally // Centrado horizontal
         ) {
+            // Logo de Fixsy
+            Text(
+                text = "🔧",
+                style = MaterialTheme.typography.displayLarge
+            )
+            Spacer(Modifier.height(16.dp)) // Separación
+            
             Text(
                 text = "Login",
                 style = MaterialTheme.typography.headlineSmall // Título

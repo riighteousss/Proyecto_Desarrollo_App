@@ -1,3 +1,23 @@
+/**
+ * NAVGRAPH - NAVEGACIÓN PRINCIPAL
+ * 
+ * 🎯 PUNTO CLAVE: Aquí está toda la NAVEGACIÓN de la aplicación
+ * - NavHost es el contenedor de todas las pantallas
+ * - startDestination define cuál pantalla se muestra primero
+ * - composable() define cada pantalla y su ruta
+ * - navController.navigate() cambia entre pantallas
+ * 
+ * 📱 PANTALLAS DISPONIBLES:
+ * - HomeScreen (pantalla principal)
+ * - LoginScreen (iniciar sesión)
+ * - RegisterScreen (registrarse)
+ * - ProfileScreen (perfil de usuario)
+ * - Y muchas más...
+ * 
+ * 🔄 FLUJO DE NAVEGACIÓN:
+ * Home → Login → Home (después de login exitoso)
+ * Home → Register → Home (después de registro exitoso)
+ */
 package com.example.uinavegacion.navigation
 import androidx.compose.foundation.layout.padding // Para aplicar innerPadding
 import androidx.compose.material3.Scaffold // Estructura base con slots
@@ -21,9 +41,10 @@ import com.example.uinavegacion.ui.components.defaultDrawerItems // Ítems por d
 import com.example.uinavegacion.ui.screen.HomeScreen // Pantalla Home
 import com.example.uinavegacion.ui.screen.AssistanceChoiceScreen
 import com.example.uinavegacion.ui.screen.ScheduleScreen
-import com.example.uinavegacion.ui.screen.EmergencyScreen
-import com.example.uinavegacion.ui.screen.MechanicsListScreen
-import com.example.uinavegacion.ui.screen.ProfileScreen
+import com.example.uinavegacion.ui.screen.EmergencyScreen // Pantalla Emergencia
+import com.example.uinavegacion.ui.screen.MechanicsListScreen // Pantalla Lista de Mecánicos
+import com.example.uinavegacion.ui.screen.ProfileScreen // Pantalla Perfil
+import com.example.uinavegacion.ui.screen.EditProfileScreen // Pantalla Editar Perfil
 import com.example.uinavegacion.ui.screen.RequestsScreen // Pantalla Solicitudes
 import com.example.uinavegacion.ui.screen.LoginScreenVm // Pantalla Login
 import com.example.uinavegacion.ui.screen.RegisterScreenVm // Pantalla Registro
@@ -31,7 +52,6 @@ import com.example.uinavegacion.ui.screen.SettingsScreen // Pantalla Configuraci
 import com.example.uinavegacion.ui.screen.MyVehiclesScreen // Pantalla Mis Vehículos
 import com.example.uinavegacion.ui.screen.MyAddressesScreen // Pantalla Mis Direcciones
 import com.example.uinavegacion.ui.screen.HelpScreen // Pantalla Ayuda
-import com.example.uinavegacion.ui.screen.EmergencyScreen // Pantalla Emergencia
 import com.example.uinavegacion.ui.screen.RequestServiceScreen // Pantalla Solicitar Servicio
 import com.example.uinavegacion.ui.screen.FavoritesScreen // Pantalla Favoritos
 import com.example.uinavegacion.ui.screen.AppointmentsScreen // Pantalla Citas
@@ -39,13 +59,18 @@ import com.example.uinavegacion.ui.screen.RoleSelectionScreen // Pantalla Selecc
 import com.example.uinavegacion.ui.screen.MechanicHomeScreen // Pantalla Home para Mecánicos
 import com.example.uinavegacion.ui.screen.AdminHomeScreen // Pantalla Home para Administradores
 import com.example.uinavegacion.ui.screen.AdminAuthScreen // Pantalla Autenticación de Admin
+import com.example.uinavegacion.ui.screen.SimpleMapScreen
+import com.example.uinavegacion.ui.screen.CameraScreen // Pantalla de Cámara
+import com.example.uinavegacion.ui.screen.RequestHistoryScreen // Pantalla de Historial
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel
 import com.example.uinavegacion.ui.viewmodel.ServiceViewModel
 import com.example.uinavegacion.ui.viewmodel.ThemeViewModel
 import com.example.uinavegacion.ui.viewmodel.VehicleViewModel
 import com.example.uinavegacion.ui.viewmodel.AddressViewModel
+import com.example.uinavegacion.ui.viewmodel.MechanicViewModel
 import com.example.uinavegacion.ui.viewmodel.RoleViewModel
 import com.example.uinavegacion.ui.viewmodel.UserRole
+import com.example.uinavegacion.ui.viewmodel.RequestFormViewModel
 
 @Composable // Gráfico de navegación + Drawer + Scaffold
 fun AppNavGraph(navController: NavHostController,
@@ -54,7 +79,10 @@ fun AppNavGraph(navController: NavHostController,
                 themeViewModel: ThemeViewModel,
                 vehicleViewModel: VehicleViewModel,
                 addressViewModel: AddressViewModel,
-                roleViewModel: RoleViewModel) { // Recibe el controlador
+                mechanicViewModel: MechanicViewModel,
+                roleViewModel: RoleViewModel,
+                db: com.example.uinavegacion.data.local.database.AppDatabase,
+                requestFormViewModel: RequestFormViewModel) { // Recibe el controlador
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed) // Estado del drawer
     val scope = rememberCoroutineScope() // Necesario para abrir/cerrar drawer
@@ -76,7 +104,7 @@ fun AppNavGraph(navController: NavHostController,
     val goHome: () -> Unit    = { navController.navigate(Route.Home.path) }    // Ir a Home
     val goLogin: () -> Unit   = { navController.navigate(Route.Login.path) }   // Ir a Login
     val goRegister: () -> Unit = { navController.navigate(Route.Register.path) } // Ir a Registro
-    val goRequests: () -> Unit = { navController.navigate(Route.Requests.path) } // Ir a Solicitudes
+    val goRequests: () -> Unit = { navController.navigate(Route.RequestHistory.path) } // Ir a Historial de Solicitudes
     val goSettings: () -> Unit = { navController.navigate(Route.Settings.path) } // Ir a Configuraciones
     val goVehicles: () -> Unit = { navController.navigate(Route.MyVehicles.path) } // Ir a Mis Vehículos
     val goAddresses: () -> Unit = { navController.navigate(Route.MyAddresses.path) } // Ir a Mis Direcciones
@@ -109,8 +137,14 @@ fun AppNavGraph(navController: NavHostController,
                 AppTopBar(
                     onOpenDrawer = { scope.launch { drawerState.open() } }, // Abre drawer
                     onHome = goHome,     // Botón Home
-                    onLogin = goLogin,   // Botón Login
-                    onRegister = goRegister // Botón Registro
+                    onUserAction = { 
+                        if (authViewModel.isLoggedIn.value) {
+                            navController.navigate(Route.EditProfile.path)
+                        } else {
+                            navController.navigate(Route.Login.path)
+                        }
+                    },
+                    isLoggedIn = authViewModel.isLoggedIn.value
                 )
             }
         ) { innerPadding -> // Padding que evita solapar contenido
@@ -135,7 +169,8 @@ fun AppNavGraph(navController: NavHostController,
                         onGoEmergency = { navController.navigate(Route.EmergencyService.path) },
                         onGoRequestService = { navController.navigate(Route.RequestService.path) },
                         onGoFavorites = { navController.navigate(Route.Favorites.path) },
-                        onGoAppointments = { navController.navigate(Route.Appointments.path) }
+                        onGoAppointments = { navController.navigate(Route.Appointments.path) },
+                        onGoMap = { navController.navigate(Route.Map.path) }
                     )
                 }
                 composable(Route.AssistanceChoice.path) {
@@ -177,6 +212,7 @@ fun AppNavGraph(navController: NavHostController,
                         onGoSettings = goSettings,
                         onGoHelp = goHelp,
                         onToggleDarkMode = { themeViewModel.toggleDarkMode() },
+                        onEditProfile = { navController.navigate(Route.EditProfile.path) },
                         onLogout = { 
                             authViewModel.logout()
                             navController.navigate(Route.Home.path) {
@@ -232,7 +268,6 @@ fun AppNavGraph(navController: NavHostController,
                 }
                 composable(Route.MyVehicles.path) { // Destino Mis Vehículos
                     MyVehiclesScreen(
-                        vehicleViewModel = vehicleViewModel,
                         isLoggedIn = isLoggedIn,
                         onGoLogin = goLogin,
                         onAddVehicle = { /* TODO: Implementar agregar vehículo */ },
@@ -242,7 +277,6 @@ fun AppNavGraph(navController: NavHostController,
                 }
                 composable(Route.MyAddresses.path) { // Destino Mis Direcciones
                     MyAddressesScreen(
-                        addressViewModel = addressViewModel,
                         isLoggedIn = isLoggedIn,
                         onGoLogin = goLogin,
                         onAddAddress = { /* TODO: Implementar agregar dirección */ },
@@ -275,7 +309,21 @@ fun AppNavGraph(navController: NavHostController,
                         onRequestService = { service, vehicle, description, images ->
                             // TODO: Implementar lógica de solicitud de servicio
                             navController.popBackStack()
-                        }
+                        },
+                        onGoCamera = { navController.navigate(Route.Camera.path) },
+                        onSaveToHistory = { service, vehicle, description, images ->
+                            // Guardar en el historial de solicitudes
+                            val requestHistory = com.example.uinavegacion.data.local.request.RequestHistoryEntity(
+                                userId = 1L, // TODO: Obtener ID del usuario logueado
+                                serviceType = service,
+                                vehicleInfo = vehicle,
+                                description = description,
+                                status = "Pendiente",
+                                images = images.joinToString(",")
+                            )
+                            // TODO: Implementar guardado en base de datos
+                        },
+                        requestFormViewModel = requestFormViewModel
                     )
                 }
                 
@@ -293,7 +341,8 @@ fun AppNavGraph(navController: NavHostController,
                         onGoBack = { navController.popBackStack() },
                         onBookAppointment = {
                             // TODO: Implementar reserva de cita
-                        }
+                        },
+                        isLoggedIn = authViewModel.isLoggedIn.value
                     )
                 }
                 
@@ -361,6 +410,42 @@ fun AppNavGraph(navController: NavHostController,
                                 popUpTo(Route.RoleSelection.path) { inclusive = true }
                             }
                         }
+                    )
+                }
+                
+                // Pantalla de edición de perfil
+                composable(Route.EditProfile.path) { // Destino Editar Perfil
+                    EditProfileScreen(
+                        onGoBack = { navController.popBackStack() },
+                        onSaveProfile = { name, email, phone, imageUri ->
+                            // TODO: Implementar guardado de perfil
+                            navController.popBackStack()
+                        }
+                    )
+                }
+                
+                composable(Route.Map.path) { // Destino Mapa
+                    SimpleMapScreen(
+                        onGoBack = { navController.popBackStack() }
+                    )
+                }
+                
+                composable(Route.Camera.path) { // Destino Cámara
+                    CameraScreen(
+                        onBack = { navController.popBackStack() },
+                        onPhotoTaken = { photoUri ->
+                            // TODO: Guardar la foto y regresar a la pantalla anterior
+                            navController.popBackStack()
+                        },
+                        requestFormViewModel = requestFormViewModel
+                    )
+                }
+                
+                composable(Route.RequestHistory.path) { // Destino Historial de Solicitudes
+                    RequestHistoryScreen(
+                        userId = 1L, // TODO: Obtener ID del usuario logueado
+                        requestHistoryDao = db.requestHistoryDao(),
+                        onGoBack = { navController.popBackStack() }
                     )
                 }
             }
