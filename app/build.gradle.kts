@@ -12,11 +12,16 @@ android {
     defaultConfig {
         applicationId = "com.example.uinavegacion"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 34  // Cambiado de 36 a 34 para evitar problemas de 16KB
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Configuración para compatibilidad con 16KB
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     buildTypes {
@@ -26,6 +31,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            isMinifyEnabled = false
         }
     }
     compileOptions {
@@ -37,6 +45,16 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    
+    // Configuración para compatibilidad con 16KB
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 }
 
@@ -69,4 +87,25 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+    
+    // Coil para cargar imágenes
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    
+    // Activity Result API
+    implementation("androidx.activity:activity-compose:1.8.2")
+    
+    // Google Maps con ubicación
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.maps.android:maps-compose:4.3.0")
+    
+    // Permisos
+    implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+    
+    // Cámara - versiones actualizadas para compatibilidad 16KB
+    implementation("androidx.camera:camera-core:1.4.0")
+    implementation("androidx.camera:camera-camera2:1.4.0")
+    implementation("androidx.camera:camera-lifecycle:1.4.0")
+    implementation("androidx.camera:camera-view:1.4.0")
+    implementation("androidx.camera:camera-extensions:1.4.0")
 }
