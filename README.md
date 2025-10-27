@@ -8,8 +8,8 @@
 ### 🏗️ **Arquitectura:** MVVM + Room Database
 
 ## 👥 Integrantes del Equipo
-- **Matías** - Desarrollador Principal
-- **Compañero** - Desarrollador Colaborador
+- **Matías** - Desarrollador Principal y Organización de Código
+- **Santiago** - Desarrollador Colaborador (Base de datos, mejoras y finalización)
 
 ## 🎯 Funcionalidades Implementadas
 
@@ -42,6 +42,17 @@
 - Material Design 3
 - Interfaz responsive y accesible
 - Animaciones y transiciones suaves
+- Animaciones mejoradas con AnimatedVisibility en formularios
+
+### ✅ **Contribuciones de Santiago**
+- Implementación completa de base de datos SQLite con Room
+- Optimización de estructura de carpeta (uinavegacion → fixsy)
+- Eliminación de código redundante y mejora de la base de datos
+- Corrección de errores de compilación en NavGraph
+- Integración completa de UserDao con UserRepository
+- Sistema de CRUD funcional para todas las entidades
+- Mejoras en la inicialización de AppDatabase
+- Corrección de referencias rotas en el código
 
 ## 🏗️ Arquitectura del Proyecto
 
@@ -186,6 +197,8 @@
 ✅ Transiciones suaves
 ✅ Animaciones funcionales
 ✅ Retroalimentación visual
+✅ AnimatedVisibility en mensajes de error
+✅ Animaciones de formularios con fadeIn/expandVertically
 
 ### **IE 2.3.1 - Estructura Modular (15%)**
 ✅ Arquitectura MVVM implementada
@@ -201,6 +214,10 @@
 ✅ Cámara nativa implementada
 ✅ Almacenamiento local funcional
 ✅ Integración coherente en la UI
+
+## 📝 Nota Importante
+
+**Contribuciones de Santiago**: Santiago ha realizado contribuciones significativas al proyecto, incluyendo la implementación completa de la base de datos SQLite, optimización de la arquitectura, y corrección de errores críticos. Debido a inconvenientes técnicos con su GitHub, sus avances han sido integrados por el desarrollador principal para preservar su trabajo y permitir la finalización del proyecto.
 
 ## 🔮 Próximas Mejoras
 

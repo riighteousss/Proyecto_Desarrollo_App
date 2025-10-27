@@ -754,7 +754,7 @@ private fun StatisticsSection() {
                 StatItem(
                     number = "150+",
                     label = "Mecánicos",
-                    iconRes = R.drawable.ic_launcher_foreground
+                    iconRes = R.mipmap.ic_launcher
                 )
                 StatItem(
                     number = "500+",
@@ -764,7 +764,7 @@ private fun StatisticsSection() {
                 StatItem(
                     number = "4.8★",
                     label = "Calificación",
-                    iconRes = R.drawable.ic_launcher_foreground
+                    iconRes = R.mipmap.ic_launcher
                 )
             }
         }

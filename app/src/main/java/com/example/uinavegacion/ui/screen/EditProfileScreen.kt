@@ -25,6 +25,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.uinavegacion.ui.viewmodel.ProfileViewModel
+import com.example.uinavegacion.domain.validation.*
 
 @Composable
 fun EditProfileScreen(
@@ -47,6 +48,11 @@ fun EditProfileScreen(
     var showNameSection by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
+    
+    // Estados de validación
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var phoneError by remember { mutableStateOf<String?>(null) }
     
     // Cargar datos del perfil
     LaunchedEffect(Unit) {

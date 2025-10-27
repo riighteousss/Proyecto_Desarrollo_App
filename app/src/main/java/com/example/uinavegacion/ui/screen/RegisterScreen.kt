@@ -1,5 +1,7 @@
 package com.example.uinavegacion.ui.screen
 
+import androidx.compose.animation.*                            // Animaciones
+import androidx.compose.animation.core.*                       // Core animation
 import androidx.compose.foundation.background                 // Fondo
 import androidx.compose.foundation.layout.*                   // Box/Column/Row/Spacer
 import androidx.compose.foundation.text.KeyboardOptions
@@ -129,8 +131,12 @@ private fun RegisterScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
-            if (nameError != null) {                         // Muestra error
-                Text(nameError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            AnimatedVisibility(
+                visible = nameError != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Text(nameError ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(Modifier.height(8.dp))                    // Espacio
@@ -147,8 +153,12 @@ private fun RegisterScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
-            if (emailError != null) {                        // Muestra error
-                Text(emailError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            AnimatedVisibility(
+                visible = emailError != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Text(emailError ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(Modifier.height(8.dp))                    // Espacio
@@ -165,8 +175,12 @@ private fun RegisterScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
-            if (phoneError != null) {                        // Muestra error
-                Text(phoneError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            AnimatedVisibility(
+                visible = phoneError != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Text(phoneError ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(Modifier.height(8.dp))                    // Espacio
@@ -189,8 +203,12 @@ private fun RegisterScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            if (passError != null) {                         // Muestra error
-                Text(passError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            AnimatedVisibility(
+                visible = passError != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Text(passError ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(Modifier.height(8.dp))                    // Espacio
@@ -213,8 +231,12 @@ private fun RegisterScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            if (confirmError != null) {                      // Muestra error
-                Text(confirmError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            AnimatedVisibility(
+                visible = confirmError != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Text(confirmError ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(Modifier.height(16.dp))                   // Espacio

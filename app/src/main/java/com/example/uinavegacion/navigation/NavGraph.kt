@@ -19,58 +19,23 @@
  * Home → Register → Home (después de registro exitoso)
  */
 package com.example.uinavegacion.navigation
-import androidx.compose.foundation.layout.padding // Para aplicar innerPadding
-import androidx.compose.material3.Scaffold // Estructura base con slots
-import androidx.compose.runtime.Composable // Marcador composable
+
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.Modifier // Modificador
-import androidx.navigation.NavHostController // Controlador de navegación
-import androidx.navigation.compose.NavHost // Contenedor de destinos
-import androidx.navigation.compose.composable // Declarar cada destino
-import kotlinx.coroutines.launch // Para abrir/cerrar drawer con corrutinas
-
-import androidx.compose.material3.ModalNavigationDrawer // Drawer lateral modal
-import androidx.compose.material3.rememberDrawerState // Estado del drawer
-import androidx.compose.material3.DrawerValue // Valores (Opened/Closed)
-import androidx.compose.runtime.rememberCoroutineScope // Alcance de corrutina
-
-
-import com.example.uinavegacion.ui.components.AppTopBar // Barra superior
-import com.example.uinavegacion.ui.components.AppDrawer // Drawer composable
-import com.example.uinavegacion.ui.components.defaultDrawerItems // Ítems por defecto
-import com.example.uinavegacion.ui.screen.HomeScreen // Pantalla Home
-import com.example.uinavegacion.ui.screen.AssistanceChoiceScreen
-import com.example.uinavegacion.ui.screen.ScheduleScreen
-import com.example.uinavegacion.ui.screen.EmergencyScreen // Pantalla Emergencia
-import com.example.uinavegacion.ui.screen.MechanicsListScreen // Pantalla Lista de Mecánicos
-import com.example.uinavegacion.ui.screen.ProfileScreen // Pantalla Perfil
-import com.example.uinavegacion.ui.screen.EditProfileScreen // Pantalla Editar Perfil
-import com.example.uinavegacion.ui.screen.RequestsScreen // Pantalla Solicitudes
-import com.example.uinavegacion.ui.screen.LoginScreenVm // Pantalla Login
-import com.example.uinavegacion.ui.screen.RegisterScreenVm // Pantalla Registro
-import com.example.uinavegacion.ui.screen.SettingsScreen // Pantalla Configuraciones
-import com.example.uinavegacion.ui.screen.MyVehiclesScreen // Pantalla Mis Vehículos
-import com.example.uinavegacion.ui.screen.MyAddressesScreen // Pantalla Mis Direcciones
-import com.example.uinavegacion.ui.screen.HelpScreen // Pantalla Ayuda
-import com.example.uinavegacion.ui.screen.RequestServiceScreen // Pantalla Solicitar Servicio
-import com.example.uinavegacion.ui.screen.FavoritesScreen // Pantalla Favoritos
-import com.example.uinavegacion.ui.screen.AppointmentsScreen // Pantalla Citas
-import com.example.uinavegacion.ui.screen.RoleSelectionScreen // Pantalla Selección de Roles
-import com.example.uinavegacion.ui.screen.MechanicHomeScreen // Pantalla Home para Mecánicos
-import com.example.uinavegacion.ui.screen.AdminHomeScreen // Pantalla Home para Administradores
-import com.example.uinavegacion.ui.screen.AdminAuthScreen // Pantalla Autenticación de Admin
-import com.example.uinavegacion.ui.screen.SimpleMapScreen
-import com.example.uinavegacion.ui.screen.CameraScreen // Pantalla de Cámara
-import com.example.uinavegacion.ui.screen.RequestHistoryScreen // Pantalla de Historial
-import com.example.uinavegacion.ui.viewmodel.AuthViewModel
-import com.example.uinavegacion.ui.viewmodel.ServiceViewModel
-import com.example.uinavegacion.ui.viewmodel.ThemeViewModel
-import com.example.uinavegacion.ui.viewmodel.VehicleViewModel
-import com.example.uinavegacion.ui.viewmodel.AddressViewModel
-import com.example.uinavegacion.ui.viewmodel.MechanicViewModel
-import com.example.uinavegacion.ui.viewmodel.RoleViewModel
-import com.example.uinavegacion.ui.viewmodel.UserRole
-import com.example.uinavegacion.ui.viewmodel.RequestFormViewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.ui.components.AppDrawer
+import com.example.uinavegacion.ui.components.AppTopBar
+import com.example.uinavegacion.ui.components.defaultDrawerItems
+import com.example.uinavegacion.ui.screen.*
+import com.example.uinavegacion.ui.viewmodel.*
+import kotlinx.coroutines.launch
 
 @Composable // Gráfico de navegación + Drawer + Scaffold
 fun AppNavGraph(navController: NavHostController,
@@ -138,13 +103,13 @@ fun AppNavGraph(navController: NavHostController,
                     onOpenDrawer = { scope.launch { drawerState.open() } }, // Abre drawer
                     onHome = goHome,     // Botón Home
                     onUserAction = { 
-                        if (authViewModel.isLoggedIn.value) {
+                        if (isLoggedIn) {
                             navController.navigate(Route.EditProfile.path)
                         } else {
                             navController.navigate(Route.Login.path)
                         }
                     },
-                    isLoggedIn = authViewModel.isLoggedIn.value
+                    isLoggedIn = isLoggedIn
                 )
             }
         ) { innerPadding -> // Padding que evita solapar contenido
@@ -342,7 +307,7 @@ fun AppNavGraph(navController: NavHostController,
                         onBookAppointment = {
                             // TODO: Implementar reserva de cita
                         },
-                        isLoggedIn = authViewModel.isLoggedIn.value
+                        isLoggedIn = isLoggedIn
                     )
                 }
                 
@@ -425,7 +390,7 @@ fun AppNavGraph(navController: NavHostController,
                 }
                 
                 composable(Route.Map.path) { // Destino Mapa
-                    SimpleMapScreen(
+                    MapScreen(
                         onGoBack = { navController.popBackStack() }
                     )
                 }

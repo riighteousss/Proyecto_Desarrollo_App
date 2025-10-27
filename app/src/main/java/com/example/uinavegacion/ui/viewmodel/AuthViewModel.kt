@@ -135,39 +135,48 @@ class AuthViewModel(
      * Busca el usuario en la colección en memoria y valida las credenciales
      * Actualiza el estado de autenticación global
      */
-    fun submitLogin() {                                     // Acción de login (simulación async)
+    fun submitLogin() {                                     // Acción de login usando SQLite
         val s = _login.value                                // Snapshot del estado
         if (!s.canSubmit || s.isSubmitting) return          // Si no se puede o ya está cargando, salimos
         viewModelScope.launch {                             // Lanzamos corrutina
             _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Seteamos loading
-            delay(500)                                      // Simulamos tiempo de verificación
 
-            // Buscamos en la **colección en memoria** un usuario con ese email
-            val user = USERS.firstOrNull { it.email.equals(s.email, ignoreCase = true) }
-
+            // Usar el repository para buscar en SQLite
+            val result = repository.login(s.email, s.pass)
+            
+            val ok = result.isSuccess
+            
             // Debug: imprimir información
             println("DEBUG - Intentando login con email: ${s.email}")
-            println("DEBUG - Usuarios registrados: ${USERS.map { it.email }}")
-            println("DEBUG - Usuario encontrado: ${user?.email}")
-            println("DEBUG - Contraseña ingresada: ${s.pass}")
-            println("DEBUG - Contraseña del usuario: ${user?.pass}")
-
-            // ¿Coincide email + contraseña?
-            val ok = user != null && user.pass == s.pass
+            println("DEBUG - Usuario encontrado: ${result.getOrNull()?.email}")
+            println("DEBUG - Login exitoso: $ok")
 
             _login.update {                                 // Actualizamos con el resultado
                 it.copy(
                     isSubmitting = false,                   // Fin carga
                     success = ok,                           // true si credenciales correctas
                     errorMsg = if (!ok) {
-                        if (user == null) "Email no encontrado" else "Contraseña incorrecta"
+                        result.exceptionOrNull()?.message ?: "Credenciales inválidas"
                     } else null // Mensaje si falla
                 )
             }
             
             // Actualizar estado de login global
             _isLoggedIn.value = ok
+            
+            // Guardar sesión en SharedPreferences (se mantiene al cerrar la app)
+            if (ok) {
+                val user = result.getOrNull()
+                user?.let {
+                    saveUserSession(it)
+                }
+            }
         }
+    }
+    
+    private fun saveUserSession(user: com.example.uinavegacion.data.local.user.UserEntity) {
+        // Aquí se guardaría en SharedPreferences
+        // Por ahora lo dejamos comentado porque necesitaríamos pasar el Context
     }
 
     fun clearLoginResult() {                                // Limpia banderas tras navegar
@@ -216,38 +225,25 @@ class AuthViewModel(
         _register.update { it.copy(canSubmit = noErrors && filled) } // Actualizamos flag
     }
 
-    fun submitRegister() {                                  // Acción de registro (simulación async)
+    fun submitRegister() {                                  // Acción de registro usando SQLite
         val s = _register.value                              // Snapshot del estado
         if (!s.canSubmit || s.isSubmitting) return          // Evitamos reentradas
         viewModelScope.launch {                             // Corrutina
             _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Loading
-            delay(700)                                      // Simulamos IO
 
-            // Verificar si el email ya existe
-            val existingUser = USERS.firstOrNull { it.email.equals(s.email, ignoreCase = true) }
+            // Usar el repository para registrar en SQLite
+            val result = repository.register(s.name, s.email, s.phone, s.pass)
             
-            if (existingUser != null) {
-                // Email ya existe
-                _register.update { 
-                    it.copy(
-                        isSubmitting = false, 
-                        success = false,
-                        errorMsg = "Este email ya está registrado"
-                    )
-                }
-            } else {
-                // Crear nuevo usuario y agregarlo a la lista
-                val newUser = DemoUser(
-                    name = s.name,
-                    email = s.email,
-                    phone = s.phone,
-                    pass = s.pass
+            val ok = result.isSuccess
+            
+            _register.update {
+                it.copy(
+                    isSubmitting = false,
+                    success = ok,
+                    errorMsg = if (!ok) {
+                        result.exceptionOrNull()?.message ?: "Error al registrar"
+                    } else null
                 )
-                USERS.add(newUser)
-                
-                _register.update {
-                    it.copy(isSubmitting = false, success = true, errorMsg = null)
-                }
             }
         }
     }
