@@ -29,10 +29,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.ui.components.AppDrawer
 import com.example.uinavegacion.ui.components.AppTopBar
 import com.example.uinavegacion.ui.components.defaultDrawerItems
+import com.example.uinavegacion.data.local.request.RequestHistoryEntity
 import com.example.uinavegacion.ui.screen.*
 import com.example.uinavegacion.ui.viewmodel.*
 import kotlinx.coroutines.launch
@@ -42,9 +42,6 @@ fun AppNavGraph(navController: NavHostController,
                 authViewModel: AuthViewModel,
                 serviceViewModel: ServiceViewModel,
                 themeViewModel: ThemeViewModel,
-                vehicleViewModel: VehicleViewModel,
-                addressViewModel: AddressViewModel,
-                mechanicViewModel: MechanicViewModel,
                 roleViewModel: RoleViewModel,
                 db: com.example.uinavegacion.data.local.database.AppDatabase,
                 requestFormViewModel: RequestFormViewModel) { // Recibe el controlador
@@ -56,13 +53,11 @@ fun AppNavGraph(navController: NavHostController,
     val isDarkModeState = themeViewModel.isDarkMode.collectAsStateWithLifecycle()
     val isLoggedInState = authViewModel.isLoggedIn.collectAsStateWithLifecycle()
     val currentRoleState = roleViewModel.currentRole.collectAsStateWithLifecycle()
-    val hasSelectedRoleState = roleViewModel.hasSelectedRole.collectAsStateWithLifecycle()
     val isFirstTimeState = roleViewModel.isFirstTime.collectAsStateWithLifecycle()
     
     val isDarkMode = isDarkModeState.value
     val isLoggedIn = isLoggedInState.value
     val currentRole = currentRoleState.value
-    val hasSelectedRole = hasSelectedRoleState.value
     val isFirstTime = isFirstTimeState.value
 
     // Helpers de navegación (reutilizamos en topbar/drawer/botones)
@@ -278,7 +273,8 @@ fun AppNavGraph(navController: NavHostController,
                         onGoCamera = { navController.navigate(Route.Camera.path) },
                         onSaveToHistory = { service, vehicle, description, images ->
                             // Guardar en el historial de solicitudes
-                            val requestHistory = com.example.uinavegacion.data.local.request.RequestHistoryEntity(
+                            // TODO: Implementar guardado en base de datos
+                            val requestHistory = RequestHistoryEntity(
                                 userId = 1L, // TODO: Obtener ID del usuario logueado
                                 serviceType = service,
                                 vehicleInfo = vehicle,
@@ -286,7 +282,6 @@ fun AppNavGraph(navController: NavHostController,
                                 status = "Pendiente",
                                 images = images.joinToString(",")
                             )
-                            // TODO: Implementar guardado en base de datos
                         },
                         requestFormViewModel = requestFormViewModel
                     )

@@ -23,9 +23,6 @@ import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
 import com.example.uinavegacion.ui.viewmodel.ServiceViewModel
 import com.example.uinavegacion.ui.viewmodel.ServiceViewModelFactory
 import com.example.uinavegacion.ui.viewmodel.ThemeViewModel
-import com.example.uinavegacion.ui.viewmodel.VehicleViewModel
-import com.example.uinavegacion.ui.viewmodel.AddressViewModel
-import com.example.uinavegacion.ui.viewmodel.MechanicViewModel
 import com.example.uinavegacion.ui.viewmodel.RoleViewModel
 import com.example.uinavegacion.ui.viewmodel.RequestFormViewModel
 
@@ -80,9 +77,6 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
     val serviceViewModel: ServiceViewModel = viewModel(
         factory = ServiceViewModelFactory(serviceRepository)
     )
-    val vehicleViewModel: VehicleViewModel = viewModel { VehicleViewModel(vehicleRepository) }
-    val addressViewModel: AddressViewModel = viewModel { AddressViewModel(addressRepository) }
-    val mechanicViewModel: MechanicViewModel = viewModel { MechanicViewModel(mechanicRepository) }
     val themeViewModel: ThemeViewModel = viewModel()
     val roleViewModel: RoleViewModel = viewModel()
     val requestFormViewModel: RequestFormViewModel = viewModel()
@@ -95,9 +89,6 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
                 authViewModel = authViewModel, 
                 serviceViewModel = serviceViewModel,
                 themeViewModel = themeViewModel,
-                vehicleViewModel = vehicleViewModel,
-                addressViewModel = addressViewModel,
-                mechanicViewModel = mechanicViewModel,
                 roleViewModel = roleViewModel,
                 db = db,
                 requestFormViewModel = requestFormViewModel
