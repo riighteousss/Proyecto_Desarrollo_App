@@ -25,6 +25,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -33,6 +34,7 @@ import com.example.uinavegacion.ui.components.AppDrawer
 import com.example.uinavegacion.ui.components.AppTopBar
 import com.example.uinavegacion.ui.components.defaultDrawerItems
 import com.example.uinavegacion.data.local.request.RequestHistoryEntity
+import com.example.uinavegacion.data.local.storage.UserPreferences
 import com.example.uinavegacion.ui.screen.*
 import com.example.uinavegacion.ui.viewmodel.*
 import kotlinx.coroutines.launch
@@ -48,6 +50,16 @@ fun AppNavGraph(navController: NavHostController,
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed) // Estado del drawer
     val scope = rememberCoroutineScope() // Necesario para abrir/cerrar drawer
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferences(context) }
+    
+    // Función helper para logout que limpia DataStore
+    val performLogout: () -> Unit = {
+        scope.launch {
+            userPrefs.clearSession()
+        }
+        authViewModel.logout()
+    }
     
     // Estados observables
     val isDarkModeState = themeViewModel.isDarkMode.collectAsStateWithLifecycle()
@@ -174,7 +186,7 @@ fun AppNavGraph(navController: NavHostController,
                         onToggleDarkMode = { themeViewModel.toggleDarkMode() },
                         onEditProfile = { navController.navigate(Route.EditProfile.path) },
                         onLogout = { 
-                            authViewModel.logout()
+                            performLogout()
                             navController.navigate(Route.Home.path) {
                                 popUpTo(Route.Home.path) { inclusive = true }
                             }
@@ -215,7 +227,7 @@ fun AppNavGraph(navController: NavHostController,
                         onGoHelp = goHelp,
                         onToggleDarkMode = { themeViewModel.toggleDarkMode() },
                         onLogout = { 
-                            authViewModel.logout()
+                            performLogout()
                             navController.navigate(Route.Home.path) {
                                 popUpTo(Route.Home.path) { inclusive = true }
                             }
@@ -342,7 +354,7 @@ fun AppNavGraph(navController: NavHostController,
                         onGoEarnings = { /* TODO: Implementar ganancias */ },
                         onGoSettings = { navController.navigate(Route.Settings.path) },
                         onLogout = {
-                            authViewModel.logout()
+                            performLogout()
                             roleViewModel.logout()
                             navController.navigate(Route.RoleSelection.path) {
                                 popUpTo(Route.RoleSelection.path) { inclusive = true }
@@ -373,6 +385,7 @@ fun AppNavGraph(navController: NavHostController,
                         onGoSettings = { navController.navigate(Route.Settings.path) },
                         onGoAnalytics = { /* TODO: Implementar analíticas */ },
                         onLogout = {
+                            performLogout()
                             roleViewModel.logout()
                             navController.navigate(Route.RoleSelection.path) {
                                 popUpTo(Route.RoleSelection.path) { inclusive = true }

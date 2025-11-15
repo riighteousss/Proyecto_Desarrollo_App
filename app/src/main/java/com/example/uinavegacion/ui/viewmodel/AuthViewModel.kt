@@ -164,7 +164,7 @@ class AuthViewModel(
             // Actualizar estado de login global
             _isLoggedIn.value = ok
             
-            // Guardar sesión en SharedPreferences (se mantiene al cerrar la app)
+            // Guardar sesión en memoria (DataStore se guarda desde LoginScreen)
             if (ok) {
                 val user = result.getOrNull()
                 user?.let {
@@ -174,17 +174,23 @@ class AuthViewModel(
         }
     }
     
-    private fun saveUserSession(user: com.example.uinavegacion.data.local.user.UserEntity) {
-        // Guardar información del usuario en memoria para acceso rápido
-        // El userId se puede obtener del objeto user
-        _currentUserId = user.id
-    }
-    
-    // Variable para almacenar el ID del usuario actual
+    // Variable para almacenar el ID del usuario actual (en memoria para acceso rápido)
     private var _currentUserId: Long? = null
+    private var _currentUser: com.example.uinavegacion.data.local.user.UserEntity? = null
     
     // Función para obtener el ID del usuario actual
     fun getCurrentUserId(): Long? = _currentUserId
+    
+    // Función para obtener el usuario actual completo
+    fun getCurrentUser(): com.example.uinavegacion.data.local.user.UserEntity? = _currentUser
+    
+    // Nota: La sesión ahora se guarda usando UserPreferences (DataStore) desde LoginScreen
+    // Esta función se mantiene para compatibilidad pero ya no guarda en SharedPreferences
+    private fun saveUserSession(user: com.example.uinavegacion.data.local.user.UserEntity) {
+        // Guardar información del usuario en memoria para acceso rápido
+        _currentUserId = user.id
+        _currentUser = user
+    }
 
     fun clearLoginResult() {                                // Limpia banderas tras navegar
         _login.update { it.copy(success = false, errorMsg = null) }
@@ -266,6 +272,7 @@ class AuthViewModel(
         _currentUserId = null
         _login.update { LoginUiState() }                    // Limpiar estado de login
         _register.update { RegisterUiState() }              // Limpiar estado de registro
+        // Nota: UserPreferences.clearSession() debe llamarse desde la pantalla que maneja el logout
     }
 
     // Función de debug para ver usuarios registrados
