@@ -1,0 +1,118 @@
+<resources>
+    <string name="app_name">Fixsy</string>
+    
+    <!-- Login Screen -->
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_welcome">Bienvenido a Fixsy. Usa la barra superior, el menú lateral o los botones.</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_button">Entrar</string>
+    <string name="login_validating">Validando…</string>
+    <string name="login_create_account">Crear cuenta</string>
+    <string name="login_show_password">Mostrar contraseña</string>
+    <string name="login_hide_password">Ocultar contraseña</string>
+    <string name="login_success">¡Inicio de sesión exitoso! Bienvenido</string>
+    
+    <!-- Register Screen -->
+    <string name="register_title">Registro</string>
+    <string name="register_name">Nombre</string>
+    <string name="register_email">Correo electrónico</string>
+    <string name="register_phone">Teléfono</string>
+    <string name="register_password">Contraseña</string>
+    <string name="register_confirm_password">Confirmar contraseña</string>
+    <string name="register_button">Registrar</string>
+    <string name="register_creating">Creando cuenta…</string>
+    <string name="register_go_login">Ir a Iniciar Sesión</string>
+    
+    <!-- Request Service Screen -->
+    <string name="request_service_title">Solicitar Servicio</string>
+    <string name="request_service_subtitle">Solicita el servicio que necesitas</string>
+    <string name="request_service_type">Tipo de Servicio</string>
+    <string name="request_vehicle_type">Tipo de Vehículo</string>
+    <string name="request_description">Descripción del problema</string>
+    <string name="request_description_placeholder">Describe el problema o servicio que necesitas…</string>
+    <string name="request_photos">Fotos del problema</string>
+    <string name="request_camera">Cámara</string>
+    <string name="request_gallery">Galería</string>
+    <string name="request_images_selected">Imágenes seleccionadas: %1$d</string>
+    <string name="request_location">Ubicación</string>
+    <string name="request_submit">SOLICITAR SERVICIO</string>
+    <string name="request_success_title">Solicitud enviada</string>
+    <string name="request_success_message">Tu solicitud de servicio ha sido enviada. Un mecánico se pondrá en contacto contigo para coordinar el servicio.</string>
+    <string name="request_success_ok">Entendido</string>
+    <string name="request_info_title">Información del servicio</string>
+    <string name="request_info_details">• Tiempo de respuesta: 1-2 horas\n• Precio estimado según el servicio\n• Mecánico especializado asignado\n• Garantía en el trabajo realizado</string>
+    
+    <!-- Request History Screen -->
+    <string name="history_title">Historial de Solicitudes</string>
+    <string name="history_subtitle">Revisa todas tus solicitudes de servicio</string>
+    <string name="history_filter">Filtrar por estado:</string>
+    <string name="history_all">Todas</string>
+    <string name="history_pending">Pendiente</string>
+    <string name="history_in_progress">En Proceso</string>
+    <string name="history_completed">Completado</string>
+    <string name="history_cancelled">Cancelado</string>
+    <string name="history_empty">No tienes solicitudes</string>
+    <string name="history_empty_filtered">No hay solicitudes %1$s</string>
+    <string name="history_empty_message">Cuando hagas una solicitud de servicio, aparecerá aquí.</string>
+    <string name="history_view_details">Ver Detalles</string>
+    <string name="history_cancel">Cancelar</string>
+    <string name="history_mechanic">Mecánico: %1$s</string>
+    <string name="history_cost">Costo estimado: %1$s</string>
+    
+    <!-- Mechanic Home Screen -->
+    <string name="mechanic_welcome">¡Hola Mecánico!</string>
+    <string name="mechanic_available">Estás disponible para trabajar</string>
+    <string name="mechanic_unavailable">No disponible</string>
+    <string name="mechanic_summary">Resumen del día</string>
+    <string name="mechanic_earnings">Ganancias</string>
+    <string name="mechanic_pending">Pendientes</string>
+    <string name="mechanic_completed">Completados</string>
+    <string name="mechanic_quick_actions">Acciones rápidas</string>
+    <string name="mechanic_requests">Solicitudes</string>
+    <string name="mechanic_schedule">Mi Agenda</string>
+    <string name="mechanic_earnings_action">Ganancias</string>
+    <string name="mechanic_profile">Perfil</string>
+    <string name="mechanic_recent_requests">Solicitudes recientes</string>
+    <string name="mechanic_view_all">Ver todas</string>
+    <string name="mechanic_accept">Aceptar</string>
+    <string name="mechanic_reject">Rechazar</string>
+    
+    <!-- Camera Screen -->
+    <string name="camera_title">Tomar Foto del Problema</string>
+    <string name="camera_permission_required">Permiso de Cámara Requerido</string>
+    <string name="camera_permission_message">Necesitamos acceso a la cámara para tomar fotos del problema de tu vehículo.</string>
+    <string name="camera_request_permission">Solicitar Permiso</string>
+    <string name="camera_ready">¿Listo para tomar la foto?</string>
+    <string name="camera_instructions">Toca el botón para abrir la cámara y capturar una foto del problema de tu vehículo.</string>
+    <string name="camera_preparing">Preparando…</string>
+    <string name="camera_take_photo">Tomar Foto</string>
+    <string name="camera_preview">Preview de la Foto</string>
+    <string name="camera_accept">Aceptar</string>
+    <string name="camera_reject">Rechazar</string>
+    <string name="camera_error_capture">Error al capturar la foto. Intenta nuevamente.</string>
+    <string name="camera_error_prepare">Error al preparar la cámara: %1$s</string>
+    <string name="camera_error_storage">Error al crear archivo de imagen. Verifica el almacenamiento.</string>
+    
+    <!-- Common -->
+    <string name="back">Volver</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="edit">Editar</string>
+    <string name="ok">Aceptar</string>
+    <string name="loading">Cargando…</string>
+    <string name="error">Error</string>
+    <string name="success">Éxito</string>
+    
+    <!-- Messages -->
+    <string name="message_request_saved">Solicitud guardada correctamente</string>
+    <string name="message_request_created">Solicitud creada exitosamente</string>
+    <string name="message_profile_updated">Perfil actualizado correctamente</string>
+    <string name="message_vehicle_added">Vehículo agregado correctamente</string>
+    <string name="message_address_added">Dirección agregada correctamente</string>
+    <string name="message_mechanic_registered">Mecánico registrado correctamente</string>
+    <string name="message_error_generic">Ocurrió un error. Por favor intenta nuevamente.</string>
+    <string name="message_required_fields">Por favor completa todos los campos requeridos</string>
+    <string name="message_invalid_data">Los datos ingresados no son válidos</string>
+</resources>
