@@ -20,8 +20,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel         // Obtiene VM
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel         // ViewModel
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import com.example.uinavegacion.R
+import com.example.uinavegacion.data.local.storage.UserPreferences
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 
 //1 creamos la union con el viewmodel creado
 @Composable                                                  // Pantalla Registro conectada al VM
@@ -32,10 +35,19 @@ fun RegisterScreenVm(
 ) {
     //val vm: AuthViewModel = viewModel()                      // Crea/obtiene VM
     val state by vm.register.collectAsStateWithLifecycle()   // Observa estado en tiempo real
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferences(context) }
+    val scope = rememberCoroutineScope()
 
     if (state.success) {                                     // Si registro fue exitoso
-        vm.clearRegisterResult()                             // Limpia banderas
-        onRegisteredNavigateLogin()                          // Navega a Login
+        LaunchedEffect(state.success) {
+            scope.launch {
+                // Limpiar cualquier sesión previa al registrar nuevo usuario
+                userPrefs.clearSession()
+            }
+            vm.clearRegisterResult()                             // Limpia banderas
+            onRegisteredNavigateLogin()                          // Navega a Login
+        }
     }
 
     RegisterScreen(                                          // Delegamos UI presentacional

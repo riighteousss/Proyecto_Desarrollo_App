@@ -24,7 +24,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel         // Obtiene ViewMod
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel         // Nuestro ViewModel
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import com.example.uinavegacion.R
+import com.example.uinavegacion.data.local.storage.UserPreferences
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 
@@ -39,11 +41,25 @@ fun LoginScreenVm(
     val state by vm.login.collectAsStateWithLifecycle()      // Observa el StateFlow en tiempo real
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferences(context) }
 
     if (state.success) {                                     // Si login fue exitoso…
         LaunchedEffect(state.success) {
             scope.launch {
                 snackbarHostState.showSnackbar(stringResource(R.string.login_success))
+                
+                // Guardar sesión usando DataStore
+                val user = vm.getCurrentUser()
+                if (user != null) {
+                    userPrefs.saveUserSession(
+                        userId = user.id,
+                        email = user.email,
+                        name = user.name,
+                        role = user.role
+                    )
+                }
+                
                 kotlinx.coroutines.delay(2000) // Esperar un momento para que el usuario vea el mensaje
                 vm.clearLoginResult()                                // Limpia banderas
                 onLoginOkNavigateHome()                              // Navega a Home
