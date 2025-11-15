@@ -108,4 +108,11 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.4.0")
     implementation("androidx.camera:camera-view:1.4.0")
     implementation("androidx.camera:camera-extensions:1.4.0")
+    
+    // DataStore Preferences - Sistema mejorado de persistencia
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    
+    // Testing - Librerias para tests unitarios
+    testImplementation("io.mockk:mockk:1.13.12") // Mock para Kotlin
+    testImplementation("org.robolectric:robolectric:4.13") // Simular pruebas en Android test locales
 }
