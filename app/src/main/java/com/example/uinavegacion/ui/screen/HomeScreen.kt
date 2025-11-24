@@ -37,13 +37,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 /**
  * HOMESCREEN - PANTALLA PRINCIPAL DE LA APLICACIÓN
  * 
- * 🎯 PUNTO CLAVE: Esta es la PANTALLA PRINCIPAL de la aplicación
+ * PUNTO CLAVE: Esta es la PANTALLA PRINCIPAL de la aplicación
  * - Muestra servicios disponibles (Emergencia, Mantenimiento, etc.)
  * - Estadísticas de la app (mecánicos, servicios, calificación)
  * - Botones de login/registro si no está logueado
  * - Botón de perfil si está logueado
  * 
- * 📱 ELEMENTOS PRINCIPALES:
+ * ELEMENTOS PRINCIPALES:
  * - Header con información del usuario y foto de perfil
  * - Barra de búsqueda
  * - Sección de mecánicos cercanos
@@ -646,14 +646,6 @@ private fun BottomNavigationBar(
                 .padding(vertical = 16.dp, horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // Chats
-            BottomNavItem(
-                icon = Icons.Filled.Chat,
-                label = "Chats",
-                isSelected = false,
-                onClick = { /* Navegar a chats */ }
-            )
-            
             // Principal (Home) - seleccionado
             BottomNavItem(
                 icon = Icons.Filled.Home,

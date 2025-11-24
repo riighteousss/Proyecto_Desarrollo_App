@@ -1,39 +1,61 @@
 package com.example.uinavegacion.data.repository
 
-import com.example.uinavegacion.data.local.user.UserDao
 import com.example.uinavegacion.data.local.user.UserEntity
+import com.example.uinavegacion.data.remote.RemoteDataSource
 
-//orquesta reglas de negocio para el login/ registro sobre el DAO en común
+/**
+ * Repositorio de usuarios que consume el microservicio REST
+ * 
+ * Migrado de Room (SQLite local) a Retrofit (API REST)
+ * Todas las operaciones ahora se realizan contra el microservicio de usuarios
+ */
 class UserRepository(
-    private val userDao: UserDao //inyectando el DAO
-){
-    //login (email y pass en la tabla user)
-    suspend fun login(email: String, password: String): Result<UserEntity>{
-        val user = userDao.getByEmail(email)
-        return if( user != null && user.password == password){
-            Result.success(user)
-        } else {
-            Result.failure(IllegalArgumentException("Credenciales Inválidas"))
-        }
+    private val remoteDataSource: RemoteDataSource
+) {
+    /**
+     * Login: Autentica usuario contra el microservicio
+     */
+    suspend fun login(email: String, password: String): Result<UserEntity> {
+        return remoteDataSource.login(email, password)
     }
 
-    //registro: valide correo duplicado
-    suspend fun register(name:String, email: String, phone: String, password: String, role: String = "CLIENT"): Result<Long>{
-        val exists = userDao.getByEmail(email) != null
-        if(exists){
-            return Result.failure(IllegalArgumentException("El correo ya está registrado"))
-        }
-        else{
-            val id = userDao.insert(
-                UserEntity(
-                    name = name,
-                    email = email,
-                    phone = phone,
-                    password = password,
-                    role = role
-                )
-            )
-            return Result.success(id)
-        }
+    /**
+     * Registro: Crea nuevo usuario en el microservicio
+     */
+    suspend fun register(
+        name: String,
+        email: String,
+        phone: String,
+        password: String,
+        role: String = "CLIENT"
+    ): Result<Long> {
+        return remoteDataSource.register(name, email, phone, password, role)
+    }
+    
+    /**
+     * Obtener usuario por email
+     */
+    suspend fun getUserByEmail(email: String): Result<UserEntity> {
+        return remoteDataSource.getUserByEmail(email)
+    }
+    
+    /**
+     * Obtener usuario por ID
+     */
+    suspend fun getUserById(id: Long): Result<UserEntity> {
+        return remoteDataSource.getUserById(id)
+    }
+    
+    /**
+     * Actualizar usuario
+     */
+    suspend fun updateUser(
+        userId: Long,
+        name: String,
+        email: String,
+        phone: String,
+        password: String? = null
+    ): Result<UserEntity> {
+        return remoteDataSource.updateUser(userId, name, email, phone, password)
     }
 }

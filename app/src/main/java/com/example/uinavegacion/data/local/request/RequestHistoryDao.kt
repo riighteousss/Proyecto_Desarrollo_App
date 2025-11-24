@@ -6,12 +6,12 @@ import kotlinx.coroutines.flow.Flow
 /**
  * REQUESTHISTORYDAO - DAO PARA HISTORIAL DE SOLICITUDES
  * 
- * 🎯 PUNTO CLAVE: Aquí están todas las operaciones de base de datos para el historial
+ * PUNTO CLAVE: Aquí están todas las operaciones de base de datos para el historial
  * - CRUD completo (Create, Read, Update, Delete)
  * - Consultas por usuario, estado, fecha
  * - Operaciones reactivas con Flow
  * 
- * 📊 OPERACIONES PRINCIPALES:
+ * OPERACIONES PRINCIPALES:
  * - insertRequest() → Guardar nueva solicitud
  * - getAllRequestsByUser() → Obtener historial del usuario
  * - updateRequestStatus() → Actualizar estado de solicitud

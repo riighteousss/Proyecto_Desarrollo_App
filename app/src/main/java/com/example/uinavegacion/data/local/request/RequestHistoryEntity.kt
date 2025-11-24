@@ -7,12 +7,12 @@ import java.util.Date
 /**
  * REQUESTHISTORYENTITY - ENTIDAD PARA HISTORIAL DE SOLICITUDES
  * 
- * 🎯 PUNTO CLAVE: Esta entidad guarda el historial de todas las solicitudes de servicio
+ * PUNTO CLAVE: Esta entidad guarda el historial de todas las solicitudes de servicio
  * - Almacena información completa de cada solicitud
  * - Incluye fecha, estado, descripción y detalles del servicio
  * - Permite consultar el historial del usuario
  * 
- * 📊 CAMPOS PRINCIPALES:
+ * CAMPOS PRINCIPALES:
  * - id: Identificador único
  * - userId: ID del usuario que hizo la solicitud
  * - serviceType: Tipo de servicio (Emergencia, Mantenimiento, etc.)

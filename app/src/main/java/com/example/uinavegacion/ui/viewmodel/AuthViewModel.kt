@@ -13,24 +13,24 @@ import com.example.uinavegacion.domain.validation.*             // Importamos la
 /**
  * AUTHVIEWMODEL - MANEJO DE AUTENTICACIÓN
  * 
- * 🎯 PUNTO CLAVE: Aquí está toda la LÓGICA DE AUTENTICACIÓN
+ * PUNTO CLAVE: Aquí está toda la LÓGICA DE AUTENTICACIÓN
  * - Maneja login, registro y logout de usuarios
  * - StateFlow para datos reactivos (se actualiza automáticamente la UI)
  * - viewModelScope para operaciones asíncronas
  * - Datos en memoria (lista de usuarios de prueba)
  * 
- * 📊 ESTADOS PRINCIPALES:
+ * ESTADOS PRINCIPALES:
  * - login: LoginUiState → Estado del login
  * - register: RegisterUiState → Estado del registro
  * - isLoggedIn: Boolean → Si el usuario está logueado
  * 
- * 🔧 FUNCIONES PRINCIPALES:
+ * FUNCIONES PRINCIPALES:
  * - onLoginEmailChange() → Maneja cambios en email
  * - onLoginPasswordChange() → Maneja cambios en contraseña
  * - onLoginSubmit() → Ejecuta el login
  * - onRegisterSubmit() → Ejecuta el registro
  * 
- * 💾 DATOS: Los usuarios se guardan en una lista en memoria
+ * DATOS: Los usuarios se guardan en una lista en memoria
  * (En una app real se usaría una base de datos)
  */
 
@@ -107,9 +107,28 @@ class AuthViewModel(
     /**
      * Maneja cambios en el campo de email durante el login
      * Valida el formato del email y actualiza el estado
+     * Si el rol es MECHANIC, valida que el correo sea @mecanicofixsy.cl
      */
-    fun onLoginEmailChange(value: String) {                 // Handler cuando cambia el email
-        _login.update { it.copy(email = value, emailError = validateEmail(value)) } // Guardamos + validamos
+    fun onLoginEmailChange(value: String, currentRole: com.example.uinavegacion.ui.viewmodel.UserRole? = null) {                 // Handler cuando cambia el email
+        val emailError = if (currentRole == com.example.uinavegacion.ui.viewmodel.UserRole.MECHANIC) {
+            // Validación especial para mecánicos: debe ser @mecanicofixsy.cl
+            when {
+                value.isBlank() -> "El correo es obligatorio"
+                else -> {
+                    val baseError = validateEmail(value)
+                    if (baseError != null) {
+                        baseError
+                    } else if (!value.endsWith("@mecanicofixsy.cl", ignoreCase = true)) {
+                        "Los correos de mecánico deben ser @mecanicofixsy.cl"
+                    } else {
+                        null
+                    }
+                }
+            }
+        } else {
+            validateEmail(value) // Validación normal para clientes
+        }
+        _login.update { it.copy(email = value, emailError = emailError) } // Guardamos + validamos
         recomputeLoginCanSubmit()                           // Recalculamos habilitado
     }
 
@@ -184,6 +203,11 @@ class AuthViewModel(
     // Función para obtener el usuario actual completo
     fun getCurrentUser(): com.example.uinavegacion.data.local.user.UserEntity? = _currentUser
     
+    // Función para obtener usuario por email desde el servidor
+    suspend fun getUserByEmail(email: String): Result<com.example.uinavegacion.data.local.user.UserEntity> {
+        return repository.getUserByEmail(email)
+    }
+    
     // Nota: La sesión ahora se guarda usando UserPreferences (DataStore) desde LoginScreen
     // Esta función se mantiene para compatibilidad pero ya no guarda en SharedPreferences
     private fun saveUserSession(user: com.example.uinavegacion.data.local.user.UserEntity) {
@@ -238,13 +262,13 @@ class AuthViewModel(
         _register.update { it.copy(canSubmit = noErrors && filled) } // Actualizamos flag
     }
 
-    fun submitRegister(role: String = "CLIENT") {           // Acción de registro usando SQLite
+    fun submitRegister(role: String = "CLIENT") {           // Acción de registro usando microservicio REST
         val s = _register.value                              // Snapshot del estado
         if (!s.canSubmit || s.isSubmitting) return          // Evitamos reentradas
         viewModelScope.launch {                             // Corrutina
             _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Loading
 
-            // Usar el repository para registrar en SQLite
+            // Usar el repository para registrar en el microservicio (MySQL)
             val result = repository.register(s.name, s.email, s.phone, s.pass, role)
             
             val ok = result.isSuccess

@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Colores para Splash Screen -->
+    <color name="splash_background">#FFFF6B35</color>
 </resources>

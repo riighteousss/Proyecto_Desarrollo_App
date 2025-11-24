@@ -1,39 +1,41 @@
 /**
  * NAVGRAPH - NAVEGACIÓN PRINCIPAL
  * 
- * 🎯 PUNTO CLAVE: Aquí está toda la NAVEGACIÓN de la aplicación
+ * PUNTO CLAVE: Aquí está toda la NAVEGACIÓN de la aplicación
  * - NavHost es el contenedor de todas las pantallas
  * - startDestination define cuál pantalla se muestra primero
  * - composable() define cada pantalla y su ruta
  * - navController.navigate() cambia entre pantallas
  * 
- * 📱 PANTALLAS DISPONIBLES:
+ * PANTALLAS DISPONIBLES:
  * - HomeScreen (pantalla principal)
  * - LoginScreen (iniciar sesión)
  * - RegisterScreen (registrarse)
  * - ProfileScreen (perfil de usuario)
  * - Y muchas más...
  * 
- * 🔄 FLUJO DE NAVEGACIÓN:
+ * FLUJO DE NAVEGACIÓN:
  * Home → Login → Home (después de login exitoso)
  * Home → Register → Home (después de registro exitoso)
  */
 package com.example.uinavegacion.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.uinavegacion.ui.components.AppDrawer
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.uinavegacion.ui.components.AppTopBar
-import com.example.uinavegacion.ui.components.defaultDrawerItems
-import com.example.uinavegacion.data.local.request.RequestHistoryEntity
 import com.example.uinavegacion.data.local.storage.UserPreferences
 import com.example.uinavegacion.ui.screen.*
 import com.example.uinavegacion.ui.viewmodel.*
@@ -46,10 +48,10 @@ fun AppNavGraph(navController: NavHostController,
                 themeViewModel: ThemeViewModel,
                 roleViewModel: RoleViewModel,
                 db: com.example.uinavegacion.data.local.database.AppDatabase,
-                requestFormViewModel: RequestFormViewModel) { // Recibe el controlador
+                requestFormViewModel: RequestFormViewModel,
+                serviceRequestRepository: com.example.uinavegacion.data.repository.ServiceRequestRepository) { // Recibe el controlador
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed) // Estado del drawer
-    val scope = rememberCoroutineScope() // Necesario para abrir/cerrar drawer
+    val scope = rememberCoroutineScope() // Necesario para corrutinas
     val context = LocalContext.current
     val userPrefs = remember { UserPreferences(context) }
     
@@ -66,11 +68,33 @@ fun AppNavGraph(navController: NavHostController,
     val isLoggedInState = authViewModel.isLoggedIn.collectAsStateWithLifecycle()
     val currentRoleState = roleViewModel.currentRole.collectAsStateWithLifecycle()
     val isFirstTimeState = roleViewModel.isFirstTime.collectAsStateWithLifecycle()
+    val userRoleState = userPrefs.userRole.collectAsStateWithLifecycle(initialValue = "CLIENT")
+    val userNameState = userPrefs.userName.collectAsStateWithLifecycle(initialValue = "")
     
     val isDarkMode = isDarkModeState.value
     val isLoggedIn = isLoggedInState.value
     val currentRole = currentRoleState.value
     val isFirstTime = isFirstTimeState.value
+    val loggedInUserRole = userRoleState.value
+    val loggedInUserName = userNameState.value
+    val currentUserIdState = userPrefs.userId.collectAsStateWithLifecycle(initialValue = -1L)
+    val currentUserId = currentUserIdState.value
+
+    // Obtener la ruta actual para ocultar topBar en ciertas pantallas
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    
+    // Lista de rutas donde NO debe mostrarse la TopBar
+    val routesWithoutTopBar = setOf(
+        Route.RoleSelection.path,
+        Route.Login.path,
+        Route.Register.path,
+        Route.Splash.path
+    )
+    
+    // Solo mostrar TopBar si la ruta actual existe y NO está en la lista de rutas sin TopBar
+    // Si currentRoute es null, no mostrar TopBar (por seguridad)
+    val shouldShowTopBar = currentRoute != null && currentRoute !in routesWithoutTopBar
 
     // Helpers de navegación (reutilizamos en topbar/drawer/botones)
     val goHome: () -> Unit    = { navController.navigate(Route.Home.path) }    // Ir a Home
@@ -82,60 +106,48 @@ fun AppNavGraph(navController: NavHostController,
     val goAddresses: () -> Unit = { navController.navigate(Route.MyAddresses.path) } // Ir a Mis Direcciones
     val goHelp: () -> Unit = { navController.navigate(Route.Help.path) } // Ir a Ayuda
 
-    ModalNavigationDrawer( // Capa superior con drawer lateral
-        drawerState = drawerState, // Estado del drawer
-        drawerContent = { // Contenido del drawer (menú)
-            AppDrawer( // Nuestro componente Drawer
-                currentRoute = null, // Puedes pasar navController.currentBackStackEntry?.destination?.route
-                items = defaultDrawerItems( // Lista estándar
-                    onHome = {
-                        scope.launch { drawerState.close() } // Cierra drawer
-                        goHome() // Navega a Home
-                    },
-                    onLogin = {
-                        scope.launch { drawerState.close() } // Cierra drawer
-                        goLogin() // Navega a Login
-                    },
-                    onRegister = {
-                        scope.launch { drawerState.close() } // Cierra drawer
-                        goRegister() // Navega a Registro
-                    }
-                )
-            )
-        }
-    ) {
-        Scaffold( // Estructura base de pantalla
-            topBar = { // Barra superior con íconos/menú
-                AppTopBar(
-                    onOpenDrawer = { scope.launch { drawerState.open() } }, // Abre drawer
-                    onHome = goHome,     // Botón Home
-                    onUserAction = { 
-                        if (isLoggedIn) {
-                            navController.navigate(Route.EditProfile.path)
-                        } else {
-                            navController.navigate(Route.Login.path)
-                        }
-                    },
-                    isLoggedIn = isLoggedIn
-                )
+    Scaffold( // Estructura base de pantalla
+            topBar = { // Barra superior con íconos/menú (solo si debe mostrarse)
+                // Solo mostrar TopBar si shouldShowTopBar es true
+                if (shouldShowTopBar) {
+                    AppTopBar(
+                        onHome = goHome,     // Botón Home
+                        onUserAction = { 
+                            if (isLoggedIn) {
+                                navController.navigate(Route.EditProfile.path)
+                            } else {
+                                navController.navigate(Route.Login.path)
+                            }
+                        },
+                        isLoggedIn = isLoggedIn
+                    )
+                }
+                // Si shouldShowTopBar es false, no renderizar nada (TopBar oculta)
             }
         ) { innerPadding -> // Padding que evita solapar contenido
             NavHost( // Contenedor de destinos navegables
                 navController = navController, // Controlador
                 startDestination = when {
                     isFirstTime -> Route.RoleSelection.path
-                    currentRole == UserRole.MECHANIC -> Route.MechanicHome.path
-                    currentRole == UserRole.ADMIN -> Route.AdminHome.path
-                    else -> Route.Home.path
-                }, // Inicio basado en rol
-                modifier = Modifier.padding(innerPadding) // Respeta topBar
+                    // Solo redirigir a Home/MechanicHome/AdminHome si el usuario está logueado
+                    isLoggedIn && currentRole == UserRole.MECHANIC -> Route.MechanicHome.path
+                    isLoggedIn && currentRole == UserRole.ADMIN -> Route.AdminHome.path
+                    isLoggedIn -> Route.Home.path
+                    // Si no está logueado pero tiene rol seleccionado, ir a Login
+                    currentRole != null -> Route.Login.path
+                    // Si no tiene rol ni está logueado, ir a RoleSelection
+                    else -> Route.RoleSelection.path
+                }, // Inicio basado en rol y estado de login
+                modifier = Modifier.padding(
+                    if (shouldShowTopBar) innerPadding else PaddingValues(0.dp)
+                ) // Respeta topBar solo si está visible
             ) {
                 composable(Route.Home.path) { // Destino Home
                     HomeScreen(
-                        onGoLogin = goLogin,     // Botón para ir a Login
+                        onGoLogin = goLogin, // Botón para ir a Login
                         onGoRegister = goRegister, // Botón para ir a Registro
                         onGoRequests = goRequests, // Botón para ir a Solicitudes
-                        userName = authViewModel.getCurrentUserName(), // Nombre del usuario logueado
+                        userName = if (isLoggedIn && loggedInUserName.isNotEmpty()) loggedInUserName else null, // Nombre del usuario logueado desde UserPreferences
                         isLoggedIn = isLoggedIn, // Estado de login
                         onGoSettings = goSettings, // Botón para ir a Configuraciones
                         onGoEmergency = { navController.navigate(Route.EmergencyService.path) },
@@ -158,7 +170,21 @@ fun AppNavGraph(navController: NavHostController,
                     EmergencyScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { type, description, location ->
-                            // TODO: Implementar lógica de solicitud de emergencia
+                            // Guardar solicitud de emergencia en el microservicio
+                            scope.launch {
+                                if (currentUserId > 0) {
+                                    val emergencyRequest = com.example.uinavegacion.data.remote.dto.ServiceRequestRequestDTO(
+                                        userId = currentUserId,
+                                        serviceType = "Emergencia: $type",
+                                        vehicleInfo = "Emergencia",
+                                        description = description,
+                                        images = "",
+                                        location = location.ifEmpty { "Ubicación no especificada" },
+                                        notes = "Solicitud de emergencia - Prioridad alta"
+                                    )
+                                    serviceRequestRepository.createRequest(emergencyRequest)
+                                }
+                            }
                             navController.navigate(Route.Mechanics.path)
                         }
                     )
@@ -205,9 +231,21 @@ fun AppNavGraph(navController: NavHostController,
                     //1 modificamos el acceso a la pagina
                     // Usamos la versión con ViewModel (LoginScreenVm) para formularios/validación en tiempo real
                     LoginScreenVm(
-                        vm=authViewModel,
-                        onLoginOkNavigateHome = goHome,            // Si el VM marca success=true, navegamos a Home
-                        onGoRegister = goRegister                  // Enlace para ir a la pantalla de Registro
+                        vm = authViewModel,
+                        roleViewModel = roleViewModel,
+                        onLoginOkNavigateHome = {
+                            // Navegar según el rol seleccionado
+                            when (currentRole) {
+                                UserRole.MECHANIC -> navController.navigate(Route.MechanicHome.path) {
+                                    popUpTo(Route.Login.path) { inclusive = true }
+                                }
+                                UserRole.ADMIN -> navController.navigate(Route.AdminHome.path) {
+                                    popUpTo(Route.Login.path) { inclusive = true }
+                                }
+                                else -> goHome() // Cliente va a Home
+                            }
+                        },
+                        onGoRegister = goRegister // Enlace para ir a la pantalla de Registro
                     )
                 }
                 composable(Route.Register.path) { // Destino Registro
@@ -269,7 +307,21 @@ fun AppNavGraph(navController: NavHostController,
                     EmergencyScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { type, description, location ->
-                            // TODO: Implementar lógica de solicitud de emergencia
+                            // Guardar solicitud de emergencia en el microservicio
+                            scope.launch {
+                                if (currentUserId > 0) {
+                                    val emergencyRequest = com.example.uinavegacion.data.remote.dto.ServiceRequestRequestDTO(
+                                        userId = currentUserId,
+                                        serviceType = "Emergencia: $type",
+                                        vehicleInfo = "Emergencia",
+                                        description = description,
+                                        images = "",
+                                        location = location.ifEmpty { "Ubicación no especificada" },
+                                        notes = "Solicitud de emergencia - Prioridad alta"
+                                    )
+                                    serviceRequestRepository.createRequest(emergencyRequest)
+                                }
+                            }
                             navController.popBackStack()
                         }
                     )
@@ -279,25 +331,34 @@ fun AppNavGraph(navController: NavHostController,
                     RequestServiceScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { service, vehicle, description, images ->
-                            // TODO: Implementar lógica de solicitud de servicio
+                            // Guardar solicitud en el microservicio
+                            val currentUserId = authViewModel.getCurrentUserId() ?: 1L
+                            scope.launch {
+                                try {
+                                    val requestDTO = com.example.uinavegacion.data.remote.dto.ServiceRequestRequestDTO(
+                                        userId = currentUserId,
+                                        serviceType = service,
+                                        vehicleInfo = vehicle,
+                                        description = description,
+                                        images = images.joinToString(","),
+                                        location = "",
+                                        notes = ""
+                                    )
+                                    val result = serviceRequestRepository.createRequest(requestDTO)
+                                    result.onSuccess {
+                                        // Solicitud guardada exitosamente en el microservicio
+                                    }.onFailure {
+                                        // Error al guardar - se puede mostrar un mensaje al usuario
+                                    }
+                                } catch (e: Exception) {
+                                    // Manejar error
+                                }
+                            }
                             navController.popBackStack()
                         },
                         onGoCamera = { navController.navigate(Route.Camera.path) },
-                        onSaveToHistory = { service, vehicle, description, images ->
-                            // Guardar en el historial de solicitudes
-                            val currentUserId = authViewModel.getCurrentUserId() ?: 1L
-                            val requestHistory = RequestHistoryEntity(
-                                userId = currentUserId,
-                                serviceType = service,
-                                vehicleInfo = vehicle,
-                                description = description,
-                                status = "Pendiente",
-                                images = images.joinToString(",")
-                            )
-                            // Guardar en la base de datos
-                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                                db.requestHistoryDao().insertRequest(requestHistory)
-                            }
+                        onSaveToHistory = { _, _, _, _ -> 
+                            // Esta función ya no se usa, la lógica está en onRequestService
                         },
                         requestFormViewModel = requestFormViewModel
                     )
@@ -327,14 +388,34 @@ fun AppNavGraph(navController: NavHostController,
                     RoleSelectionScreen(
                         onSelectRole = { role ->
                             roleViewModel.selectRole(role)
-                            when (role) {
-                                UserRole.CLIENT -> navController.navigate(Route.Home.path) {
-                                    popUpTo(Route.RoleSelection.path) { inclusive = true }
+                            
+                            // Verificar si el usuario ya está logueado y el rol coincide
+                            val roleString = when (role) {
+                                UserRole.CLIENT -> "CLIENT"
+                                UserRole.MECHANIC -> "MECHANIC"
+                                UserRole.ADMIN -> "ADMIN"
+                            }
+                            
+                            if (isLoggedIn && loggedInUserRole == roleString) {
+                                // Si ya está logueado con el mismo rol, ir directamente a la pantalla correspondiente
+                                when (role) {
+                                    UserRole.MECHANIC -> navController.navigate(Route.MechanicHome.path) {
+                                        popUpTo(Route.RoleSelection.path) { inclusive = true }
+                                    }
+                                    UserRole.ADMIN -> navController.navigate(Route.AdminHome.path) {
+                                        popUpTo(Route.RoleSelection.path) { inclusive = true }
+                                    }
+                                    else -> navController.navigate(Route.Home.path) {
+                                        popUpTo(Route.RoleSelection.path) { inclusive = true }
+                                    }
                                 }
-                                UserRole.MECHANIC -> navController.navigate(Route.MechanicHome.path) {
-                                    popUpTo(Route.RoleSelection.path) { inclusive = true }
+                            } else {
+                                // Si no está logueado o el rol es diferente, limpiar sesión e ir a Login
+                                scope.launch {
+                                    userPrefs.clearSession()
+                                    authViewModel.logout()
                                 }
-                                UserRole.ADMIN -> navController.navigate(Route.AdminHome.path) {
+                                navController.navigate(Route.Login.path) {
                                     popUpTo(Route.RoleSelection.path) { inclusive = true }
                                 }
                             }
@@ -396,7 +477,15 @@ fun AppNavGraph(navController: NavHostController,
                 
                 // Pantalla de edición de perfil
                 composable(Route.EditProfile.path) { // Destino Editar Perfil
+                    // Obtener el email del usuario logueado desde AuthViewModel
+                    // Prioridad: 1) Usuario en memoria, 2) Email de UserPreferences
+                    val currentUser = authViewModel.getCurrentUser()
+                    val currentUserEmail = currentUser?.email ?: ""
+                    val userEmailFromPrefs = userPrefs.userEmail.collectAsStateWithLifecycle(initialValue = "").value
+                    val userEmail = if (currentUserEmail.isNotEmpty()) currentUserEmail else userEmailFromPrefs
+                    
                     EditProfileScreen(
+                        userEmail = userEmail, // Pasar el email del usuario logueado para cargar desde el microservicio
                         onGoBack = { navController.popBackStack() },
                         onSaveProfile = { name, email, phone, imageUri ->
                             // TODO: Implementar guardado de perfil
@@ -426,11 +515,10 @@ fun AppNavGraph(navController: NavHostController,
                     val currentUserId = authViewModel.getCurrentUserId() ?: 1L
                     RequestHistoryScreen(
                         userId = currentUserId,
-                        requestHistoryDao = db.requestHistoryDao(),
+                        serviceRequestRepository = serviceRequestRepository,
                         onGoBack = { navController.popBackStack() }
                     )
                 }
             }
         }
-    }
 }

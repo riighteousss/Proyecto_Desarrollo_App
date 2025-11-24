@@ -8,9 +8,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background                 // Fondo
 import androidx.compose.foundation.layout.*                   // Box/Column/Row/Spacer
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons                  // Íconos Material
-import androidx.compose.material.icons.filled.Visibility      // Ícono mostrar contraseña
-import androidx.compose.material.icons.filled.VisibilityOff   // Ícono ocultar contraseña
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*                           // Material 3
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*                             // remember y Composable
@@ -34,36 +34,77 @@ import kotlinx.coroutines.launch
 @Composable                                                  // Pantalla Login conectada al VM
 fun LoginScreenVm(
     vm: AuthViewModel,
+    roleViewModel: com.example.uinavegacion.ui.viewmodel.RoleViewModel,
     onLoginOkNavigateHome: () -> Unit,                       // Navega a Home cuando el login es exitoso
     onGoRegister: () -> Unit                                 // Navega a Registro
 ) {
     //val vm: AuthViewModel = viewModel()                      // Crea/obtiene VM
     val state by vm.login.collectAsStateWithLifecycle()      // Observa el StateFlow en tiempo real
+    val currentRole by roleViewModel.currentRole.collectAsStateWithLifecycle() // Obtener rol actual
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val userPrefs = remember { UserPreferences(context) }
 
-    if (state.success) {                                     // Si login fue exitoso…
-        LaunchedEffect(state.success) {
-            scope.launch {
-                snackbarHostState.showSnackbar(stringResource(R.string.login_success))
-                
-                // Guardar sesión usando DataStore
+    val successMessage = stringResource(R.string.login_success)
+    
+    // Guardar sesión cuando el login es exitoso
+    LaunchedEffect(state.success) {
+        if (state.success) {
+            snackbarHostState.showSnackbar(successMessage)
+            
+            // Guardar sesión usando DataStore
+            // Obtener el usuario del microservicio para asegurar que tenemos todos los datos actualizados
+            val email = state.email
+            
+            if (email.isNotEmpty()) {
+                // Obtener usuario del microservicio para asegurar que tenemos todos los datos
+                val result = vm.getUserByEmail(email)
+                if (result.isSuccess) {
+                    val userFromServer = result.getOrNull()
+                    if (userFromServer != null) {
+                        // Guardar toda la información del usuario que inició sesión
+                        userPrefs.saveUserSession(
+                            userId = userFromServer.id,
+                            email = userFromServer.email,
+                            name = userFromServer.name,
+                            role = userFromServer.role,
+                            phone = userFromServer.phone
+                        )
+                        kotlinx.coroutines.delay(500) // Pausa para asegurar que DataStore complete la escritura
+                    }
+                } else {
+                    // Si falla, intentar usar el usuario en memoria como respaldo
+                    val user = vm.getCurrentUser()
+                    if (user != null) {
+                        userPrefs.saveUserSession(
+                            userId = user.id,
+                            email = user.email,
+                            name = user.name,
+                            role = user.role,
+                            phone = user.phone
+                        )
+                        kotlinx.coroutines.delay(500)
+                    }
+                }
+            } else {
+                // Si no hay email, usar el usuario en memoria
                 val user = vm.getCurrentUser()
                 if (user != null) {
                     userPrefs.saveUserSession(
                         userId = user.id,
                         email = user.email,
                         name = user.name,
-                        role = user.role
+                        role = user.role,
+                        phone = user.phone
                     )
+                    kotlinx.coroutines.delay(500)
                 }
-                
-                kotlinx.coroutines.delay(2000) // Esperar un momento para que el usuario vea el mensaje
-                vm.clearLoginResult()                                // Limpia banderas
-                onLoginOkNavigateHome()                              // Navega a Home
             }
+            
+            kotlinx.coroutines.delay(2000) // Esperar un momento para que el usuario vea el mensaje
+            vm.clearLoginResult()                                // Limpia banderas
+            onLoginOkNavigateHome()                              // Navega a Home
         }
     }
 
@@ -76,10 +117,11 @@ fun LoginScreenVm(
             canSubmit = state.canSubmit,                         // Habilitar botón
             isSubmitting = state.isSubmitting,                   // Loading
             errorMsg = state.errorMsg,                           // Error global
-            onEmailChange = vm::onLoginEmailChange,              // Handler email
+            onEmailChange = { vm.onLoginEmailChange(it, currentRole) }, // Handler email con validación de rol
             onPassChange = vm::onLoginPassChange,                // Handler pass
             onSubmit = vm::submitLogin,                          // Acción enviar
-            onGoRegister = onGoRegister                          // Ir a Registro
+            onGoRegister = onGoRegister,                         // Ir a Registro
+            isMechanic = currentRole == com.example.uinavegacion.ui.viewmodel.UserRole.MECHANIC // Indicar si es mecánico
         )
         
         // Snackbar para mensajes informativos
@@ -105,7 +147,8 @@ private fun LoginScreen(
     onEmailChange: (String) -> Unit,                         // Handler cambio email
     onPassChange: (String) -> Unit,                          // Handler cambio password
     onSubmit: () -> Unit,                                    // Acción enviar
-    onGoRegister: () -> Unit                                 // Acción ir a registro
+    onGoRegister: () -> Unit,                                // Acción ir a registro
+    isMechanic: Boolean = false                              // Indica si es login de mecánico
 ) {
     val bg = MaterialTheme.colorScheme.secondaryContainer // Fondo distinto para contraste
     //4 Agregamos la siguiente linea
@@ -140,6 +183,26 @@ private fun LoginScreen(
                 text = stringResource(R.string.login_welcome),
                 textAlign = TextAlign.Center // Alineación centrada
             )
+            
+            // Mensaje informativo para mecánicos
+            if (isMechanic) {
+                Spacer(Modifier.height(12.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Text(
+                        text = "⚠️ Los correos de mecánico deben ser @mecanicofixsy.cl",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(12.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            
             Spacer(Modifier.height(20.dp)) // Separación
 
             //5 Borramos los elementos anteriores y comenzamos a agregar los elementos dle formulario

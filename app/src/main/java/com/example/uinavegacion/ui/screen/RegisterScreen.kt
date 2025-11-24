@@ -5,9 +5,9 @@ import androidx.compose.animation.core.*                       // Core animation
 import androidx.compose.foundation.background                 // Fondo
 import androidx.compose.foundation.layout.*                   // Box/Column/Row/Spacer
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons                  // Íconos Material
-import androidx.compose.material.icons.filled.Visibility      // Ícono mostrar
-import androidx.compose.material.icons.filled.VisibilityOff   // Ícono ocultar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*                           // Material 3
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*                             // remember, Composable

@@ -88,13 +88,16 @@ fun MechanicHomeScreen(
         )
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        // Header con estado online/offline
-        Card(
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Header con estado online/offline
+            Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
@@ -223,13 +226,16 @@ fun MechanicHomeScreen(
             }
 
             items(recentRequests) { request ->
+                val inProgressStatus = stringResource(R.string.history_in_progress)
+                val cancelledStatus = stringResource(R.string.history_cancelled)
+                
                 ServiceRequestCard(
                     request = request,
                     onAccept = { 
                         scope.launch {
                             if (requestHistoryDao != null) {
                                 try {
-                                    requestHistoryDao.updateRequestStatus(request.id.toLong(), stringResource(R.string.history_in_progress))
+                                    requestHistoryDao.updateRequestStatus(request.id.toLong(), inProgressStatus)
                                     snackbarHostState.showSnackbar("Solicitud aceptada correctamente")
                                 } catch (e: Exception) {
                                     snackbarHostState.showSnackbar("Error al aceptar la solicitud")
@@ -241,7 +247,7 @@ fun MechanicHomeScreen(
                         scope.launch {
                             if (requestHistoryDao != null) {
                                 try {
-                                    requestHistoryDao.updateRequestStatus(request.id.toLong(), stringResource(R.string.history_cancelled))
+                                    requestHistoryDao.updateRequestStatus(request.id.toLong(), cancelledStatus)
                                     snackbarHostState.showSnackbar("Solicitud rechazada")
                                 } catch (e: Exception) {
                                     snackbarHostState.showSnackbar("Error al rechazar la solicitud")
@@ -256,6 +262,7 @@ fun MechanicHomeScreen(
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
+        }
         }
         
         // Snackbar para mensajes informativos

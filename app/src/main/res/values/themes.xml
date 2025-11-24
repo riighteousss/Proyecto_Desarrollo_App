@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Tema principal de la aplicación -->
     <style name="Theme.UINavegacion" parent="android:Theme.Material.Light.NoActionBar" />
+    
+    <!-- Tema para el Splash Screen -->
+    <style name="Theme.UINavegacion.Splash" parent="Theme.SplashScreen">
+        <!-- Asegurar que no haya ActionBar -->
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <!-- Color de fondo del splash -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Logo del splash (opcional, se puede usar el icono de la app) -->
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- Duración de la animación del icono (opcional) -->
+        <item name="android:windowSplashScreenAnimationDuration">1000</item>
+        <!-- Color del icono (opcional) -->
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
 </resources>
