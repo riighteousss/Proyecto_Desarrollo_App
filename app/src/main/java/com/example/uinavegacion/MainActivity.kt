@@ -8,10 +8,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import com.example.uinavegacion.ui.theme.AppTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.remote.RemoteDataSource
+import com.example.uinavegacion.data.remote.RetrofitClient
+import com.example.uinavegacion.data.repository.ServiceRequestRepository
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.ServiceRepository
 import com.example.uinavegacion.data.repository.VehicleRepository
@@ -25,50 +34,81 @@ import com.example.uinavegacion.ui.viewmodel.ServiceViewModelFactory
 import com.example.uinavegacion.ui.viewmodel.ThemeViewModel
 import com.example.uinavegacion.ui.viewmodel.RoleViewModel
 import com.example.uinavegacion.ui.viewmodel.RequestFormViewModel
-
+import kotlinx.coroutines.delay
 /**
- * MAIN ACTIVITY - ACTIVIDAD PRINCIPAL
+ * MainActivity - Actividad principal de la aplicación
  * 
- * 🎯 PUNTO CLAVE: Esta es la ACTIVIDAD PRINCIPAL de la aplicación
- * - Extiende ComponentActivity (nueva forma de crear actividades)
- * - setContent{} es donde se define toda la UI con Jetpack Compose
+ * Punto clave: Esta es la actividad principal de la aplicación
+ * - Extiende ComponentActivity
+ * - setContent{} define toda la UI con Jetpack Compose
  * - AppRoot() maneja toda la lógica de la aplicación
  * 
- * 📱 FLUJO: MainActivity → AppRoot → NavGraph → Pantallas
+ * Flujo: MainActivity -> AppRoot -> NavGraph -> Pantallas
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Cambiar al tema normal ANTES de setContent para evitar ActionBar del sistema
+        setTheme(com.example.uinavegacion.R.style.Theme_UINavegacion)
+        
+        // Instalar el splash screen ANTES de setContent
+        val splashScreen = installSplashScreen()
+        
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Mantener el splash screen visible hasta que la app esté lista
+        var keepSplashOnScreen = true
+        splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
+        
         setContent {
-            AppRoot()
+            AppRoot(
+                onSplashScreenReady = {
+                    // Cuando la app esté lista, ocultar el splash screen
+                    keepSplashOnScreen = false
+                }
+            )
         }
     }
 }
 
-/*
-* En Compose, Surface es un contenedor visual que viene de Material 3.Crea un bloque
-* que puedes personalizar con color, forma, sombra (elevación).
-* Sirve para aplicar un fondo (color, borde, elevación, forma) siguiendo las guías de diseño
-* de Material.
-* Piensa en él como una “lona base” sobre la cual vas a pintar tu UI.
-* Si cambias el tema a dark mode, colorScheme.background
-* cambia automáticamente y el Surface pinta la pantalla con el nuevo color.
-*/
+/**
+ * AppRoot - Raíz de la aplicación
+ * 
+ * Inicializa todas las dependencias necesarias:
+ * - Base de datos local (Room)
+ * - Fuente de datos remota (Retrofit)
+ * - Repositorios
+ * - ViewModels
+ * - Navegación
+ */
 @Composable
-fun AppRoot() { // Raíz de la app para separar responsabilidades
+fun AppRoot(
+    onSplashScreenReady: () -> Unit = {}
+) {
     // Crear contexto de las dependencias
     val context = LocalContext.current.applicationContext
 
-    // Instancia BD y dependencias
-    val db = AppDatabase.getInstance(context)
+    // Instancia BD local (cacheada con remember para evitar recreación)
+    val db = remember { AppDatabase.getInstance(context) }
     
-    // Repositorios
-    val userRepository = UserRepository(db.userDao())
-    val serviceRepository = ServiceRepository(db.serviceRequestDao())
-    val vehicleRepository = VehicleRepository(db.vehicleDao())
-    val addressRepository = AddressRepository(db.addressDao())
-    val mechanicRepository = MechanicRepository(db.mechanicDao())
+    // Configuración de Retrofit para consumir microservicios (lazy initialization)
+    val remoteDataSource = remember {
+        RemoteDataSource(
+            userApiService = RetrofitClient.userApiService,
+            serviceRequestApiService = RetrofitClient.serviceRequestApiService,
+            vehicleApiService = RetrofitClient.vehicleApiService
+        )
+    }
+    
+    // Repositorios - Migrados a Retrofit (usuarios, solicitudes y vehículos)
+    val userRepository = remember { UserRepository(remoteDataSource) }
+    val serviceRequestRepository = remember { ServiceRequestRepository(remoteDataSource) }
+    val vehicleRepository = remember { VehicleRepository(remoteDataSource) }
+    
+    // Repositorios locales (mantienen Room para datos que no están en microservicios)
+    val serviceRepository = remember { ServiceRepository(db.serviceRequestDao()) } // Mantener por compatibilidad
+    val addressRepository = remember { AddressRepository(db.addressDao()) }
+    val mechanicRepository = remember { MechanicRepository(db.mechanicDao()) }
     
     // ViewModels
     val authViewModel: AuthViewModel = viewModel(
@@ -82,16 +122,26 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
     val requestFormViewModel: RequestFormViewModel = viewModel()
 
     val navController = rememberNavController() // Controlador de navegación
+    
+    // Cambiar el tema de la actividad después de que el splash termine
+    LaunchedEffect(Unit) {
+        // Esperar un momento para que la UI se cargue
+        delay(500)
+        // Notificar que la app está lista
+        onSplashScreenReady()
+    }
+    
     AppTheme { // Tema personalizado con colores naranja y azul
         Surface(color = MaterialTheme.colorScheme.background) { // Fondo general
             AppNavGraph(
-                navController = navController, 
-                authViewModel = authViewModel, 
+                navController = navController,
+                authViewModel = authViewModel,
                 serviceViewModel = serviceViewModel,
                 themeViewModel = themeViewModel,
                 roleViewModel = roleViewModel,
                 db = db,
-                requestFormViewModel = requestFormViewModel
+                requestFormViewModel = requestFormViewModel,
+                serviceRequestRepository = serviceRequestRepository
             ) // Carga el NavHost + Scaffold + Drawer
         }
     }

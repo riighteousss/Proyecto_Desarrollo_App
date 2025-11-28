@@ -27,10 +27,12 @@ sealed class Route(val path: String) { // Cada objeto representa una pantalla
     data object Map              : Route("map")
     data object Camera          : Route("camera")
     data object RequestHistory  : Route("request_history")
+    data object Splash          : Route("splash")
 }
 
-/*
-* “Strings mágicos” se refiere a cuando pones un texto duro y repetido en varias partes del código,
-* Si mañana cambias "home" por "inicio", tendrías que buscar todas las ocurrencias de "home" a mano.
-* Eso es frágil y propenso a errores.
-La idea es: mejor centralizar esos strings en una sola clase (Route), y usarlos desde ahí.*/
+/**
+ * Routes - Definición de rutas de navegación
+ * 
+ * Evita "strings mágicos" centralizando todas las rutas en una clase sellada.
+ * Si necesitas cambiar una ruta, solo modificas este archivo.
+ */

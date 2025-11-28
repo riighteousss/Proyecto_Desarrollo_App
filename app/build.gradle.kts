@@ -47,6 +47,11 @@ android {
         compose = true
     }
     
+    // Configuración de Room para exportar schema
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+    
     // Configuración para compatibilidad con 16KB
     packaging {
         jniLibs {
@@ -112,7 +117,16 @@ dependencies {
     // DataStore Preferences - Sistema mejorado de persistencia
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     
+    // Retrofit - Consumo de APIs REST
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    
     // Testing - Librerias para tests unitarios
     testImplementation("io.mockk:mockk:1.13.12") // Mock para Kotlin
     testImplementation("org.robolectric:robolectric:4.13") // Simular pruebas en Android test locales
+    
+    // Splash Screen API (Android 12+)
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

@@ -8,19 +8,19 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * REQUESTFORMVIEWMODEL - MANEJO DE ESTADO DEL FORMULARIO
  * 
- * 🎯 PUNTO CLAVE: Este ViewModel mantiene el estado del formulario de solicitud
+ * PUNTO CLAVE: Este ViewModel mantiene el estado del formulario de solicitud
  * - Preserva los datos cuando navegas entre pantallas
  * - Maneja el estado de la cámara y las imágenes
  * - Permite limpiar el formulario cuando se completa
  * 
- * 📊 ESTADOS PRINCIPALES:
+ * ESTADOS PRINCIPALES:
  * - selectedService: Tipo de servicio seleccionado
  * - selectedVehicle: Vehículo seleccionado
  * - description: Descripción del problema
  * - selectedImages: Lista de imágenes capturadas
  * - isFormValid: Si el formulario está completo
  * 
- * 🔧 FUNCIONES PRINCIPALES:
+ * FUNCIONES PRINCIPALES:
  * - updateService() → Actualiza tipo de servicio
  * - updateVehicle() → Actualiza vehículo
  * - updateDescription() → Actualiza descripción

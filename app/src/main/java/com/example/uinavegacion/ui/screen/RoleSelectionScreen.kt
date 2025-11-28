@@ -41,7 +41,6 @@ fun RoleSelectionScreen(
             verticalArrangement = Arrangement.Center
         ) {
             item {
-                // Logo y título
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {

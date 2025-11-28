@@ -12,19 +12,19 @@ import kotlinx.coroutines.flow.map
 /**
  * USERPREFERENCES - SISTEMA DE PERSISTENCIA CON DATASTORE
  * 
- * 🎯 PUNTO CLAVE: Sistema mejorado de persistencia usando DataStore
+ * PUNTO CLAVE: Sistema mejorado de persistencia usando DataStore
  * - Reemplaza SharedPreferences con una solución más moderna y type-safe
  * - Maneja el estado de sesión del usuario
  * - Almacena información del usuario logueado
  * 
- * 📊 FUNCIONALIDADES:
+ * FUNCIONALIDADES:
  * - Guardar estado de login
  * - Guardar ID del usuario actual
  * - Guardar email del usuario
  * - Guardar nombre del usuario
  * - Guardar rol del usuario
  * 
- * 🔧 VENTAJAS SOBRE SHAREDPREFERENCES:
+ * VENTAJAS SOBRE SHAREDPREFERENCES:
  * - Type-safe (tipado seguro)
  * - Asíncrono por defecto
  * - Mejor manejo de errores
@@ -39,6 +39,7 @@ class UserPreferences(private val context: Context) {
     private val userEmailKey = stringPreferencesKey("user_email")
     private val userNameKey = stringPreferencesKey("user_name")
     private val userRoleKey = stringPreferencesKey("user_role")
+    private val userPhoneKey = stringPreferencesKey("user_phone")
 
     // ---------- SESIÓN DE USUARIO ----------
     
@@ -118,15 +119,33 @@ class UserPreferences(private val context: Context) {
         .map { prefs -> prefs[userRoleKey] ?: "CLIENT" }
 
     /**
+     * Guarda el teléfono del usuario actual
+     */
+    suspend fun setUserPhone(phone: String) {
+        context.dataStore.edit { prefs ->
+            prefs[userPhoneKey] = phone
+        }
+    }
+
+    /**
+     * Obtiene el teléfono del usuario actual como Flow reactivo
+     */
+    val userPhone: Flow<String> = context.dataStore.data
+        .map { prefs -> prefs[userPhoneKey] ?: "" }
+
+    /**
      * Guarda toda la información del usuario de una vez
      */
-    suspend fun saveUserSession(userId: Long, email: String, name: String, role: String) {
+    suspend fun saveUserSession(userId: Long, email: String, name: String, role: String, phone: String = "") {
         context.dataStore.edit { prefs ->
             prefs[isLoggedInKey] = true
             prefs[userIdKey] = userId
             prefs[userEmailKey] = email
             prefs[userNameKey] = name
             prefs[userRoleKey] = role
+            if (phone.isNotEmpty()) {
+                prefs[userPhoneKey] = phone
+            }
         }
     }
 
@@ -140,6 +159,7 @@ class UserPreferences(private val context: Context) {
             prefs.remove(userEmailKey)
             prefs.remove(userNameKey)
             prefs.remove(userRoleKey)
+            prefs.remove(userPhoneKey)
         }
     }
 }

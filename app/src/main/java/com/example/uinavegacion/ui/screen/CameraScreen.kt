@@ -38,19 +38,19 @@ import java.util.*
 /**
  * CAMERASCREEN - PANTALLA DE CÁMARA
  * 
- * 🎯 PUNTO CLAVE: Esta pantalla permite tomar fotos del problema del vehículo
+ * PUNTO CLAVE: Esta pantalla permite tomar fotos del problema del vehículo
  * - Solicita permisos de cámara automáticamente
  * - Abre la cámara del dispositivo para tomar fotos
  * - Muestra preview de la foto tomada
  * - Permite aceptar o rechazar la foto
  * 
- * 📱 FUNCIONALIDADES:
+ * FUNCIONALIDADES:
  * - Permisos de cámara automáticos
  * - Captura de fotos con cámara nativa
  * - Preview de imagen capturada
  * - Botones de aceptar/rechazar
  * 
- * 🔄 FLUJO:
+ * FLUJO:
  * 1. Usuario toca "Tomar Foto"
  * 2. Se solicita permiso de cámara
  * 3. Se abre la cámara del dispositivo
