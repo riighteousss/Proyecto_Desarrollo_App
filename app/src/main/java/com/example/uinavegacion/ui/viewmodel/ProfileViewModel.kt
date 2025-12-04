@@ -116,9 +116,57 @@ class ProfileViewModel : ViewModel() {
     }
     
     /**
+     * Sincroniza el perfil con el servidor (descarga imagen de perfil)
+     */
+    fun syncProfileWithServer(
+        context: Context,
+        remoteDataSource: com.example.uinavegacion.data.remote.RemoteDataSource,
+        userId: Long
+    ) {
+        if (userId <= 0) return
+
+        viewModelScope.launch {
+            try {
+                val result = remoteDataSource.getProfileImagesByUserId(userId)
+                result.onSuccess { images ->
+                    if (images.isNotEmpty()) {
+                        // Tomamos la ultima imagen subida
+                        val lastImage = images.last()
+                        val imageUrl = lastImage.downloadUrl
+                        
+                        // Si tenemos URL, actualizamos
+                        if (!imageUrl.isNullOrEmpty()) {
+                            // Construir URL completa si es relativa
+                            val fullUrl = if (imageUrl.startsWith("http")) {
+                                imageUrl
+                            } else {
+                                com.example.uinavegacion.data.remote.RetrofitClient.BASE_URL_IMAGENES.removeSuffix("/") + imageUrl
+                            }
+                            
+                            // Actualizar DataStore
+                            context.profileDataStore.edit { prefs ->
+                                prefs[profileImageKey] = fullUrl
+                                prefs[profileImageIdKey] = lastImage.id.toString()
+                            }
+                            
+                            // Actualizar estado
+                            _userProfile.value = _userProfile.value.copy(
+                                profileImageUri = fullUrl,
+                                profileImageId = lastImage.id
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
      * Carga la imagen de perfil desde el microservicio
      * @param imageId ID de la imagen en el microservicio
-     * @param context Contexto de la aplicación
+     * @param context Contexto de la aplicacion
      */
     suspend fun loadProfileImageFromServer(
         imageId: Long,
@@ -128,8 +176,8 @@ class ProfileViewModel : ViewModel() {
         return try {
             // Obtener la imagen desde el microservicio
             val imageResult = remoteDataSource.getImagesByRequestId(imageId)
-            // Nota: Este método está diseñado para solicitudes, necesitamos uno para imágenes de perfil
-            // Por ahora, retornamos un resultado vacío
+            // Nota: Este metodo esta disenado para solicitudes, necesitamos uno para imagenes de perfil
+            // Por ahora, retornamos un resultado vacio
             Result.success(null)
         } catch (e: Exception) {
             Result.failure(e)

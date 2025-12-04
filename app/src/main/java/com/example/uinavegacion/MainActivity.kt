@@ -9,12 +9,9 @@ import androidx.compose.material3.Surface
 import com.example.uinavegacion.ui.theme.AppTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.uinavegacion.data.local.database.AppDatabase
@@ -23,9 +20,6 @@ import com.example.uinavegacion.data.remote.RetrofitClient
 import com.example.uinavegacion.data.repository.ServiceRequestRepository
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.ServiceRepository
-import com.example.uinavegacion.data.repository.VehicleRepository
-import com.example.uinavegacion.data.repository.AddressRepository
-import com.example.uinavegacion.data.repository.MechanicRepository
 import com.example.uinavegacion.data.repository.ImageRepository
 import com.example.uinavegacion.navigation.AppNavGraph
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel
@@ -36,13 +30,14 @@ import com.example.uinavegacion.ui.viewmodel.ThemeViewModel
 import com.example.uinavegacion.ui.viewmodel.RoleViewModel
 import com.example.uinavegacion.ui.viewmodel.RequestFormViewModel
 import kotlinx.coroutines.delay
+
 /**
- * MainActivity - Actividad principal de la aplicación
+ * MainActivity - Actividad principal de la aplicacion
  * 
- * Punto clave: Esta es la actividad principal de la aplicación
+ * Punto clave: Esta es la actividad principal de la aplicacion
  * - Extiende ComponentActivity
  * - setContent{} define toda la UI con Jetpack Compose
- * - AppRoot() maneja toda la lógica de la aplicación
+ * - AppRoot() maneja toda la logica de la aplicacion
  * 
  * Flujo: MainActivity -> AppRoot -> NavGraph -> Pantallas
  */
@@ -57,14 +52,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        // Mantener el splash screen visible hasta que la app esté lista
+        // Mantener el splash screen visible hasta que la app este lista
         var keepSplashOnScreen = true
         splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
         
         setContent {
             AppRoot(
                 onSplashScreenReady = {
-                    // Cuando la app esté lista, ocultar el splash screen
+                    // Cuando la app este lista, ocultar el splash screen
                     keepSplashOnScreen = false
                 }
             )
@@ -73,14 +68,14 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * AppRoot - Raíz de la aplicación
+ * AppRoot - Raiz de la aplicacion
  * 
  * Inicializa todas las dependencias necesarias:
  * - Base de datos local (Room)
  * - Fuente de datos remota (Retrofit)
  * - Repositorios
  * - ViewModels
- * - Navegación
+ * - Navegacion
  */
 @Composable
 fun AppRoot(
@@ -89,10 +84,10 @@ fun AppRoot(
     // Crear contexto de las dependencias
     val context = LocalContext.current.applicationContext
 
-    // Instancia BD local (cacheada con remember para evitar recreación)
+    // Instancia BD local (cacheada con remember para evitar recreacion)
     val db = remember { AppDatabase.getInstance(context) }
     
-    // Configuración de Retrofit para consumir microservicios (lazy initialization)
+    // Configuracion de Retrofit para consumir microservicios (lazy initialization)
     val remoteDataSource = remember {
         RemoteDataSource(
             userApiService = RetrofitClient.userApiService,
@@ -102,15 +97,12 @@ fun AppRoot(
         )
     }
     
-    // Repositorios - Migrados a Retrofit (usuarios, solicitudes y vehículos)
+    // Repositorios - Migrados a Retrofit (usuarios, solicitudes y vehiculos)
     val userRepository = remember { UserRepository(remoteDataSource) }
     val serviceRequestRepository = remember { ServiceRequestRepository(remoteDataSource) }
-    val vehicleRepository = remember { VehicleRepository(remoteDataSource) }
     
-    // Repositorios locales (mantienen Room para datos que no están en microservicios)
+    // Repositorios locales (mantienen Room para datos que no estan en microservicios)
     val serviceRepository = remember { ServiceRepository(db.serviceRequestDao()) } // Mantener por compatibilidad
-    val addressRepository = remember { AddressRepository(db.addressDao()) }
-    val mechanicRepository = remember { MechanicRepository(db.mechanicDao()) }
     val imageRepository = remember { ImageRepository(db.imageDao(), context) }
     
     // ViewModels
@@ -124,13 +116,13 @@ fun AppRoot(
     val roleViewModel: RoleViewModel = viewModel()
     val requestFormViewModel: RequestFormViewModel = viewModel()
 
-    val navController = rememberNavController() // Controlador de navegación
+    val navController = rememberNavController() // Controlador de navegacion
     
-    // Cambiar el tema de la actividad después de que el splash termine
+    // Cambiar el tema de la actividad despues de que el splash termine
     LaunchedEffect(Unit) {
         // Esperar un momento para que la UI se cargue
         delay(500)
-        // Notificar que la app está lista
+        // Notificar que la app esta lista
         onSplashScreenReady()
     }
     

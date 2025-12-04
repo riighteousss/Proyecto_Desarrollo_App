@@ -10,14 +10,14 @@ import org.robolectric.annotation.Config
 /**
  * VALIDATORSTEST - TESTS UNITARIOS PARA VALIDADORES
  * 
- * 🎯 PUNTO CLAVE: Tests para verificar que los validadores funcionan correctamente
+ *  PUNTO CLAVE: Tests para verificar que los validadores funcionan correctamente
  * - Valida formato de email
  * - Valida nombre (solo letras)
  * - Valida teléfono (solo números)
  * - Valida contraseña segura
  * - Valida confirmación de contraseña
  * 
- * 📊 COBERTURA:
+ *  COBERTURA:
  * - Casos exitosos (validación OK)
  * - Casos de error (validación falla)
  * - Casos límite

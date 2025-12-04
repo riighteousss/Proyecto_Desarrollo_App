@@ -1,22 +1,22 @@
 /**
- * NAVGRAPH - NAVEGACIÓN PRINCIPAL
+ * NAVGRAPH - NAVEGACION PRINCIPAL
  * 
- * PUNTO CLAVE: Aquí está toda la NAVEGACIÓN de la aplicación
+ * PUNTO CLAVE: Aqui esta toda la NAVEGACION de la aplicacion
  * - NavHost es el contenedor de todas las pantallas
- * - startDestination define cuál pantalla se muestra primero
+ * - startDestination define cual pantalla se muestra primero
  * - composable() define cada pantalla y su ruta
  * - navController.navigate() cambia entre pantallas
  * 
  * PANTALLAS DISPONIBLES:
  * - HomeScreen (pantalla principal)
- * - LoginScreen (iniciar sesión)
+ * - LoginScreen (iniciar sesion)
  * - RegisterScreen (registrarse)
  * - ProfileScreen (perfil de usuario)
- * - Y muchas más...
+ * - Y muchas mas...
  * 
- * FLUJO DE NAVEGACIÓN:
- * Home → Login → Home (después de login exitoso)
- * Home → Register → Home (después de registro exitoso)
+ * FLUJO DE NAVEGACION:
+ * Home -> Login -> Home (despues de login exitoso)
+ * Home -> Register -> Home (despues de registro exitoso)
  */
 package com.example.uinavegacion.navigation
 
@@ -42,7 +42,7 @@ import com.example.uinavegacion.ui.screen.*
 import com.example.uinavegacion.ui.viewmodel.*
 import kotlinx.coroutines.launch
 
-@Composable // Gráfico de navegación + Drawer + Scaffold
+@Composable // Grafico de navegacion + Drawer + Scaffold
 fun AppNavGraph(navController: NavHostController,
                 authViewModel: AuthViewModel,
                 serviceViewModel: ServiceViewModel,
@@ -63,7 +63,7 @@ fun AppNavGraph(navController: NavHostController,
         roleViewModel.initialize(context)
     }
     
-    // Función helper para logout que limpia DataStore y restablece RoleSelection
+    // Funcion helper para logout que limpia DataStore y restablece RoleSelection
     val performLogout: () -> Unit = {
         scope.launch {
             userPrefs.clearSession()
@@ -101,26 +101,26 @@ fun AppNavGraph(navController: NavHostController,
         Route.Splash.path
     )
     
-    // Solo mostrar TopBar si la ruta actual existe y NO está en la lista de rutas sin TopBar
+    // Solo mostrar TopBar si la ruta actual existe y NO esta en la lista de rutas sin TopBar
     // Si currentRoute es null, no mostrar TopBar (por seguridad)
     val shouldShowTopBar = currentRoute != null && currentRoute !in routesWithoutTopBar
 
-    // Helpers de navegación (reutilizamos en topbar/drawer/botones)
+    // Helpers de navegacion (reutilizamos en topbar/drawer/botones)
     val goHome: () -> Unit    = { navController.navigate(Route.Home.path) }    // Ir a Home
     val goLogin: () -> Unit   = { navController.navigate(Route.Login.path) }   // Ir a Login
     val goRegister: () -> Unit = { navController.navigate(Route.Register.path) } // Ir a Registro
     val goRequests: () -> Unit = { navController.navigate(Route.RequestHistory.path) } // Ir a Historial de Solicitudes
     val goSettings: () -> Unit = { navController.navigate(Route.Settings.path) } // Ir a Configuraciones
-    val goVehicles: () -> Unit = { navController.navigate(Route.MyVehicles.path) } // Ir a Mis Vehículos
+    val goVehicles: () -> Unit = { navController.navigate(Route.MyVehicles.path) } // Ir a Mis Vehiculos
     val goAddresses: () -> Unit = { navController.navigate(Route.MyAddresses.path) } // Ir a Mis Direcciones
     val goHelp: () -> Unit = { navController.navigate(Route.Help.path) } // Ir a Ayuda
 
     Scaffold( // Estructura base de pantalla
-            topBar = { // Barra superior con íconos/menú (solo si debe mostrarse)
+            topBar = { // Barra superior con iconos/menu (solo si debe mostrarse)
                 // Solo mostrar TopBar si shouldShowTopBar es true
                 if (shouldShowTopBar) {
                     AppTopBar(
-                        onHome = goHome,     // Botón Home
+                        onHome = goHome,     // Boton Home
                         onUserAction = { 
                             if (isLoggedIn) {
                                 navController.navigate(Route.EditProfile.path)
@@ -137,31 +137,33 @@ fun AppNavGraph(navController: NavHostController,
             NavHost( // Contenedor de destinos navegables
                 navController = navController, // Controlador
                 startDestination = when {
-                    // ⚠️ PRIORIDAD 1: Si el usuario está logueado, ir directamente a su pantalla principal
+                    // PRIORIDAD 1: Si el usuario esta logueado, ir directamente a su pantalla principal
                     isLoggedIn && currentRole == UserRole.MECHANIC -> Route.MechanicHome.path
                     isLoggedIn && currentRole == UserRole.ADMIN -> Route.AdminHome.path
                     isLoggedIn -> Route.Home.path
-                    // ⚠️ PRIORIDAD 2: Si NO está logueado, SIEMPRE mostrar RoleSelection primero
+                    // PRIORIDAD 2: Si NO esta logueado, SIEMPRE mostrar RoleSelection primero
                     // (El usuario puede cambiar de rol o continuar con el rol guardado)
                     else -> Route.RoleSelection.path
                 }, // Inicio basado en rol y estado de login
                 modifier = Modifier.padding(
                     if (shouldShowTopBar) innerPadding else PaddingValues(0.dp)
-                ) // Respeta topBar solo si está visible
+                ) // Respeta topBar solo si esta visible
             ) {
                 composable(Route.Home.path) { // Destino Home
                     HomeScreen(
-                        onGoLogin = goLogin, // Botón para ir a Login
-                        onGoRegister = goRegister, // Botón para ir a Registro
-                        onGoRequests = goRequests, // Botón para ir a Solicitudes
+                        onGoLogin = goLogin, // Boton para ir a Login
+                        onGoRegister = goRegister, // Boton para ir a Registro
+                        onGoRequests = goRequests, // Boton para ir a Solicitudes
                         userName = if (isLoggedIn && loggedInUserName.isNotEmpty()) loggedInUserName else null, // Nombre del usuario logueado desde UserPreferences
                         isLoggedIn = isLoggedIn, // Estado de login
-                        onGoSettings = goSettings, // Botón para ir a Configuraciones
+                        onGoSettings = goSettings, // Boton para ir a Configuraciones
                         onGoEmergency = { navController.navigate(Route.EmergencyService.path) },
                         onGoRequestService = { navController.navigate(Route.RequestService.path) },
                         onGoFavorites = { navController.navigate(Route.Favorites.path) },
                         onGoAppointments = { navController.navigate(Route.Appointments.path) },
-                        onGoMap = { navController.navigate(Route.Map.path) }
+                        onGoMap = { navController.navigate(Route.Map.path) },
+                        remoteDataSource = remoteDataSource,
+                        currentUserId = currentUserId
                     )
                 }
                 composable(Route.AssistanceChoice.path) {
@@ -174,7 +176,7 @@ fun AppNavGraph(navController: NavHostController,
                     ScheduleScreen(onConfirmed = { navController.navigate(Route.Mechanics.path) }, serviceViewModel = serviceViewModel)
                 }
                 composable(Route.Emergency.path) {
-                    // Redirigir a EmergencyService para evitar duplicación
+                    // Redirigir a EmergencyService para evitar duplicacion
                     EmergencyScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { type, description, location ->
@@ -186,7 +188,7 @@ fun AppNavGraph(navController: NavHostController,
                                         vehicleInfo = "Emergencia",
                                         description = description,
                                         images = "",
-                                        location = location.ifEmpty { "Ubicación no especificada" },
+                                        location = location.ifEmpty { "Ubicacion no especificada" },
                                         notes = "Solicitud de emergencia - Prioridad alta"
                                     )
                                     serviceRequestRepository.createRequest(emergencyRequest)
@@ -203,10 +205,10 @@ fun AppNavGraph(navController: NavHostController,
                         val req = com.example.uinavegacion.data.local.service.ServiceRequest(
                             type = "solicitud_mecanico",
                             description = "Solicitud para ${mech.name}",
-                            address = "Dirección de ejemplo",
+                            address = "Direccion de ejemplo",
                             timestamp = now
                         )
-                        serviceViewModel.create(req) { id -> /* opcional: mostrar confirmación */ }
+                        serviceViewModel.create(req) { id -> /* opcional: mostrar confirmacion */ }
                     })
                 }
                 composable(Route.Profile.path) {
@@ -220,7 +222,7 @@ fun AppNavGraph(navController: NavHostController,
                         onEditProfile = { navController.navigate(Route.EditProfile.path) },
                         onLogout = { 
                             performLogout()
-                            // Después de logout, volver a RoleSelection (pantalla inicial)
+                            // Despues de logout, volver a RoleSelection (pantalla inicial)
                             navController.navigate(Route.RoleSelection.path) {
                                 popUpTo(Route.RoleSelection.path) { inclusive = true }
                             }
@@ -237,12 +239,12 @@ fun AppNavGraph(navController: NavHostController,
                 }
                 composable(Route.Login.path) { // Destino Login
                     //1 modificamos el acceso a la pagina
-                    // Usamos la versión con ViewModel (LoginScreenVm) para formularios/validación en tiempo real
+                    // Usamos la version con ViewModel (LoginScreenVm) para formularios/validacion en tiempo real
                     LoginScreenVm(
                         vm = authViewModel,
                         roleViewModel = roleViewModel,
                         onLoginOkNavigateHome = {
-                            // Navegar según el rol seleccionado
+                            // Navegar segun el rol seleccionado
                             when (currentRole) {
                                 UserRole.MECHANIC -> navController.navigate(Route.MechanicHome.path) {
                                     popUpTo(Route.Login.path) { inclusive = true }
@@ -259,11 +261,11 @@ fun AppNavGraph(navController: NavHostController,
                 }
                 composable(Route.Register.path) { // Destino Registro
                     //2 modificamos el acceso a la pagina
-                    // Usamos la versión con ViewModel (RegisterScreenVm) para formularios/validación en tiempo real
+                    // Usamos la version con ViewModel (RegisterScreenVm) para formularios/validacion en tiempo real
                     RegisterScreenVm(
                         vm= authViewModel,
                         onRegisteredNavigateLogin = goLogin,       // Si el VM marca success=true, volvemos a Login
-                        onGoLogin = goLogin                        // Botón alternativo para ir a Login
+                        onGoLogin = goLogin                        // Boton alternativo para ir a Login
                     )
                 }
                 composable(Route.Settings.path) { // Destino Configuraciones
@@ -275,7 +277,7 @@ fun AppNavGraph(navController: NavHostController,
                         onToggleDarkMode = { themeViewModel.toggleDarkMode() },
                         onLogout = { 
                             performLogout()
-                            // Después de logout, volver a RoleSelection (pantalla inicial)
+                            // Despues de logout, volver a RoleSelection (pantalla inicial)
                             navController.navigate(Route.RoleSelection.path) {
                                 popUpTo(Route.RoleSelection.path) { inclusive = true }
                             }
@@ -286,22 +288,22 @@ fun AppNavGraph(navController: NavHostController,
                         currentRole = currentRole?.name
                     )
                 }
-                composable(Route.MyVehicles.path) { // Destino Mis Vehículos
+                composable(Route.MyVehicles.path) { // Destino Mis Vehiculos
                     MyVehiclesScreen(
                         isLoggedIn = isLoggedIn,
                         onGoLogin = goLogin,
-                        onAddVehicle = { /* TODO: Implementar agregar vehículo */ },
-                        onEditVehicle = { /* TODO: Implementar editar vehículo */ },
-                        onDeleteVehicle = { /* TODO: Implementar eliminar vehículo */ }
+                        onAddVehicle = { /* TODO: Implementar agregar vehiculo */ },
+                        onEditVehicle = { /* TODO: Implementar editar vehiculo */ },
+                        onDeleteVehicle = { /* TODO: Implementar eliminar vehiculo */ }
                     )
                 }
                 composable(Route.MyAddresses.path) { // Destino Mis Direcciones
                     MyAddressesScreen(
                         isLoggedIn = isLoggedIn,
                         onGoLogin = goLogin,
-                        onAddAddress = { /* TODO: Implementar agregar dirección */ },
-                        onEditAddress = { /* TODO: Implementar editar dirección */ },
-                        onDeleteAddress = { /* TODO: Implementar eliminar dirección */ },
+                        onAddAddress = { /* TODO: Implementar agregar direccion */ },
+                        onEditAddress = { /* TODO: Implementar editar direccion */ },
+                        onDeleteAddress = { /* TODO: Implementar eliminar direccion */ },
                         onSetDefault = { /* TODO: Implementar establecer predeterminada */ }
                     )
                 }
@@ -326,7 +328,7 @@ fun AppNavGraph(navController: NavHostController,
                                         vehicleInfo = "Emergencia",
                                         description = description,
                                         images = "",
-                                        location = location.ifEmpty { "Ubicación no especificada" },
+                                        location = location.ifEmpty { "Ubicacion no especificada" },
                                         notes = "Solicitud de emergencia - Prioridad alta"
                                     )
                                     serviceRequestRepository.createRequest(emergencyRequest)
@@ -341,7 +343,7 @@ fun AppNavGraph(navController: NavHostController,
                     RequestServiceScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { service, vehicle, description, images ->
-                            // Guardar solicitud en el microservicio con persistencia obligatoria de imágenes
+                            // Guardar solicitud en el microservicio con persistencia obligatoria de imagenes
                             val currentUserId = authViewModel.getCurrentUserId() ?: 1L
                             scope.launch {
                                 try {
@@ -351,7 +353,7 @@ fun AppNavGraph(navController: NavHostController,
                                         serviceType = service,
                                         vehicleInfo = vehicle,
                                         description = description,
-                                        images = "", // Se actualizará después de subir las imágenes
+                                        images = "", // Se actualizara despues de subir las imagenes
                                         location = "",
                                         notes = ""
                                     )
@@ -360,7 +362,7 @@ fun AppNavGraph(navController: NavHostController,
                                     createResult.onSuccess { createdRequest ->
                                         val requestId = createdRequest.id
                                         
-                                        // 2. Guardar imágenes en BD local
+                                        // 2. Guardar imagenes en BD local
                                         val localImageIds = mutableListOf<Long>()
                                         for (imageUri in images) {
                                             val saveResult = imageRepository.saveImageFromUri(requestId, imageUri)
@@ -369,7 +371,7 @@ fun AppNavGraph(navController: NavHostController,
                                             }
                                         }
                                         
-                                        // 3. Enviar todas las imágenes al microservicio de imágenes
+                                        // 3. Enviar todas las imagenes al microservicio de imagenes
                                         val uploadedImageIds = mutableListOf<Long>()
                                         for (imageUri in images) {
                                             val uri = android.net.Uri.parse(imageUri)
@@ -389,7 +391,7 @@ fun AppNavGraph(navController: NavHostController,
                                             }
                                         }
                                         
-                                        // 4. Actualizar la solicitud con los IDs de las imágenes subidas
+                                        // 4. Actualizar la solicitud con los IDs de las imagenes subidas
                                         if (uploadedImageIds.isNotEmpty()) {
                                             val updatedRequestDTO = com.example.uinavegacion.data.remote.dto.ServiceRequestRequestDTO(
                                                 userId = currentUserId,
@@ -413,7 +415,7 @@ fun AppNavGraph(navController: NavHostController,
                         },
                         onGoCamera = { navController.navigate(Route.Camera.path) },
                         onSaveToHistory = { _, _, _, _ -> 
-                            // Esta función ya no se usa, la lógica está en onRequestService
+                            // Esta funcion ya no se usa, la logica esta en onRequestService
                         },
                         requestFormViewModel = requestFormViewModel
                     )
@@ -423,7 +425,7 @@ fun AppNavGraph(navController: NavHostController,
                     FavoritesScreen(
                         onGoBack = { navController.popBackStack() },
                         onContactMechanic = { mechanicId ->
-                            // TODO: Implementar contacto con mecánico
+                            // TODO: Implementar contacto con mecanico
                         }
                     )
                 }
@@ -438,13 +440,13 @@ fun AppNavGraph(navController: NavHostController,
                     )
                 }
                 
-                // Pantalla de selección de roles
-                composable(Route.RoleSelection.path) { // Destino Selección de Roles
+                // Pantalla de seleccion de roles
+                composable(Route.RoleSelection.path) { // Destino Seleccion de Roles
                     RoleSelectionScreen(
                         onSelectRole = { role ->
                             roleViewModel.selectRole(role)
                             
-                            // Verificar si el usuario ya está logueado y el rol coincide
+                            // Verificar si el usuario ya esta logueado y el rol coincide
                             val roleString = when (role) {
                                 UserRole.CLIENT -> "CLIENT"
                                 UserRole.MECHANIC -> "MECHANIC"
@@ -452,7 +454,7 @@ fun AppNavGraph(navController: NavHostController,
                             }
                             
                             if (isLoggedIn && loggedInUserRole == roleString) {
-                                // Si ya está logueado con el mismo rol, ir directamente a la pantalla correspondiente
+                                // Si ya esta logueado con el mismo rol, ir directamente a la pantalla correspondiente
                                 when (role) {
                                     UserRole.MECHANIC -> navController.navigate(Route.MechanicHome.path) {
                                         popUpTo(Route.RoleSelection.path) { inclusive = true }
@@ -465,7 +467,7 @@ fun AppNavGraph(navController: NavHostController,
                                     }
                                 }
                             } else {
-                                // Si no está logueado o el rol es diferente, limpiar sesión e ir a Login
+                                // Si no esta logueado o el rol es diferente, limpiar sesion e ir a Login
                                 scope.launch {
                                     userPrefs.clearSession()
                                     authViewModel.logout()
@@ -478,15 +480,15 @@ fun AppNavGraph(navController: NavHostController,
                     )
                 }
                 
-                // Pantalla Home para Mecánicos
-                composable(Route.MechanicHome.path) { // Destino Home Mecánico
+                // Pantalla Home para Mecanicos
+                composable(Route.MechanicHome.path) { // Destino Home Mecanico
                     val currentUserId = authViewModel.getCurrentUserId() ?: 0L
                     MechanicHomeScreen(
                         requestHistoryDao = db.requestHistoryDao(),
                         mechanicId = currentUserId,
-                        onGoProfile = { /* TODO: Implementar perfil mecánico */ },
-                        onGoRequests = { /* TODO: Implementar solicitudes mecánico */ },
-                        onGoSchedule = { /* TODO: Implementar agenda mecánico */ },
+                        onGoProfile = { /* TODO: Implementar perfil mecanico */ },
+                        onGoRequests = { /* TODO: Implementar solicitudes mecanico */ },
+                        onGoSchedule = { /* TODO: Implementar agenda mecanico */ },
                         onGoEarnings = { /* TODO: Implementar ganancias */ },
                         onGoSettings = { navController.navigate(Route.Settings.path) },
                         onLogout = {
@@ -499,7 +501,7 @@ fun AppNavGraph(navController: NavHostController,
                     )
                 }
                 
-                // Pantalla de autenticación de Admin
+                // Pantalla de autenticacion de Admin
                 composable(Route.AdminAuth.path) { // Destino Auth Admin
                     AdminAuthScreen(
                         onGoBack = { navController.popBackStack() },
@@ -515,11 +517,11 @@ fun AppNavGraph(navController: NavHostController,
                 // Pantalla Home para Administradores
                 composable(Route.AdminHome.path) { // Destino Home Admin
                     AdminHomeScreen(
-                        onGoUsers = { /* TODO: Implementar gestión de usuarios */ },
-                        onGoMechanics = { /* TODO: Implementar gestión de mecánicos */ },
+                        onGoUsers = { /* TODO: Implementar gestion de usuarios */ },
+                        onGoMechanics = { /* TODO: Implementar gestion de mecanicos */ },
                         onGoReports = { /* TODO: Implementar reportes */ },
                         onGoSettings = { navController.navigate(Route.Settings.path) },
-                        onGoAnalytics = { /* TODO: Implementar analíticas */ },
+                        onGoAnalytics = { /* TODO: Implementar analiticas */ },
                         onLogout = {
                             performLogout()
                             roleViewModel.logout()
@@ -530,7 +532,7 @@ fun AppNavGraph(navController: NavHostController,
                     )
                 }
                 
-                // Pantalla de edición de perfil
+                // Pantalla de edicion de perfil
                 composable(Route.EditProfile.path) { // Destino Editar Perfil
                     // Obtener el email del usuario logueado desde AuthViewModel
                     // Prioridad: 1) Usuario en memoria, 2) Email de UserPreferences
@@ -542,20 +544,20 @@ fun AppNavGraph(navController: NavHostController,
                     EditProfileScreen(
                         userEmail = userEmail, // Pasar el email del usuario logueado para cargar desde el microservicio
                         onGoBack = { 
-                            // ⚠️ Navegar de forma segura al Home para evitar pantallas blancas
+                            // NAVEGACION SEGURA: Navegar de forma segura al Home para evitar pantallas blancas
                             navController.navigate(Route.Home.path) {
-                                // Limpiar la pila de navegación hasta Home (incluyendo EditProfile)
+                                // Limpiar la pila de navegacion hasta Home (incluyendo EditProfile)
                                 popUpTo(Route.Home.path) { inclusive = false }
-                                // Evitar múltiples instancias de Home
+                                // Evitar multiples instancias de Home
                                 launchSingleTop = true
                             }
                         },
                         onSaveProfile = { name, email, phone, imageUri ->
-                            // ⚠️ Navegar de forma segura al Home después de guardar
+                            // NAVEGACION SEGURA: Navegar de forma segura al Home despues de guardar
                             navController.navigate(Route.Home.path) {
-                                // Limpiar la pila de navegación hasta Home (incluyendo EditProfile)
+                                // Limpiar la pila de navegacion hasta Home (incluyendo EditProfile)
                                 popUpTo(Route.Home.path) { inclusive = false }
-                                // Evitar múltiples instancias de Home
+                                // Evitar multiples instancias de Home
                                 launchSingleTop = true
                             }
                         }
@@ -568,7 +570,7 @@ fun AppNavGraph(navController: NavHostController,
                     )
                 }
                 
-                composable(Route.Camera.path) { // Destino Cámara
+                composable(Route.Camera.path) { // Destino Camara
                     CameraScreen(
                         onBack = { navController.popBackStack() },
                         onPhotoTaken = { photoUri ->

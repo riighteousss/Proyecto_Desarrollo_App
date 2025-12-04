@@ -65,7 +65,9 @@ fun HomeScreen(
     onGoRequestService: () -> Unit = {},
     onGoFavorites: () -> Unit = {},
     onGoAppointments: () -> Unit = {},
-    onGoMap: () -> Unit = {}
+    onGoMap: () -> Unit = {},
+    remoteDataSource: com.example.uinavegacion.data.remote.RemoteDataSource? = null,
+    currentUserId: Long = -1L
 ) {
     val context = LocalContext.current
     val profileViewModel: ProfileViewModel = viewModel()
@@ -73,6 +75,10 @@ fun HomeScreen(
     
     LaunchedEffect(Unit) {
         profileViewModel.loadProfile(context)
+        // Sincronizar imagen con el servidor si tenemos userId y remoteDataSource
+        if (currentUserId > 0 && remoteDataSource != null) {
+            profileViewModel.syncProfileWithServer(context, remoteDataSource, currentUserId)
+        }
     }
     var searchQuery by remember { mutableStateOf("") }
     val bg = MaterialTheme.colorScheme.surfaceVariant
@@ -461,85 +467,53 @@ private fun BottomNavigationBar(
     onGoRequests: () -> Unit = {},
     onGoSettings: () -> Unit = {}
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Principal (Home) - seleccionado
-            BottomNavItem(
-                icon = Icons.Filled.Home,
-                label = "Principal",
-                isSelected = true,
-                onClick = { /* Ya en home */ }
+        // Principal (Home) - seleccionado
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Home, contentDescription = "Principal") },
+            label = { Text("Principal") },
+            selected = true,
+            onClick = { /* Ya en home */ },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.secondary,
+                unselectedTextColor = MaterialTheme.colorScheme.secondary,
+                indicatorColor = Color.Transparent // Elimina la sombra/ovalo de fondo
             )
-            
-            // Solicitudes
-            BottomNavItem(
-                icon = Icons.Filled.Assignment,
-                label = "Solicitudes",
-                isSelected = false,
-                onClick = onGoRequests
+        )
+        
+        // Solicitudes
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Assignment, contentDescription = "Solicitudes") },
+            label = { Text("Solicitudes") },
+            selected = false,
+            onClick = onGoRequests,
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.secondary,
+                unselectedTextColor = MaterialTheme.colorScheme.secondary,
+                indicatorColor = Color.Transparent
             )
-            
-            // Configuraciones
-            BottomNavItem(
-                icon = Icons.Filled.Settings,
-                label = "Configuraciones",
-                isSelected = false,
-                onClick = onGoSettings
+        )
+        
+        // Configuraciones
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Settings, contentDescription = "Configuraciones") },
+            label = { Text("Configuraciones") },
+            selected = false,
+            onClick = onGoSettings,
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.secondary,
+                unselectedTextColor = MaterialTheme.colorScheme.secondary,
+                indicatorColor = Color.Transparent
             )
-        }
-    }
-}
-
-@Composable
-private fun BottomNavItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Card(
-            modifier = Modifier.size(48.dp),
-            shape = CircleShape,
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-            ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = if (isSelected) 4.dp else 0.dp
-            )
-        ) {
-            IconButton(
-                onClick = onClick,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }

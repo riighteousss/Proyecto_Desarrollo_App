@@ -24,7 +24,7 @@ object RetrofitClient {
     private const val BASE_URL_USUARIOS = "http://10.0.2.2:8081/" // Emulador Android
     private const val BASE_URL_SOLICITUDES = "http://10.0.2.2:8082/" // Emulador Android
     private const val BASE_URL_VEHICULOS = "http://10.0.2.2:8085/" // Emulador Android
-    private const val BASE_URL_IMAGENES = "http://10.0.2.2:8083/" // Emulador Android
+    const val BASE_URL_IMAGENES = "http://10.0.2.2:8083/" // Emulador Android
     
     // Para dispositivo físico, usar la IP de tu PC:
     // private const val BASE_URL_USUARIOS = "http://192.168.1.X:8081/"

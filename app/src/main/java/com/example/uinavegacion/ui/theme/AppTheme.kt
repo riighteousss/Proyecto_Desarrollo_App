@@ -15,71 +15,65 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Colores personalizados naranja y azul
-private val Orange = androidx.compose.ui.graphics.Color(0xFFFF6B35)
-private val Blue = androidx.compose.ui.graphics.Color(0xFF2E86AB)
-private val DarkOrange = androidx.compose.ui.graphics.Color(0xFFE55A2B)
-private val DarkBlue = androidx.compose.ui.graphics.Color(0xFF1B4F72)
-
 private val LightColorScheme = lightColorScheme(
-    primary = Orange,
-    onPrimary = androidx.compose.ui.graphics.Color.White,
-    primaryContainer = Orange.copy(alpha = 0.1f),
-    onPrimaryContainer = Orange,
-    secondary = Blue,
-    onSecondary = androidx.compose.ui.graphics.Color.White,
-    secondaryContainer = Blue.copy(alpha = 0.1f),
-    onSecondaryContainer = Blue,
+    primary = PrimaryOrange,
+    onPrimary = SurfaceLight,
+    primaryContainer = PrimaryOrange.copy(alpha = 0.1f),
+    onPrimaryContainer = PrimaryOrange,
+    secondary = SecondaryBlue,
+    onSecondary = SurfaceLight,
+    secondaryContainer = SecondaryBlue.copy(alpha = 0.1f),
+    onSecondaryContainer = SecondaryBlue,
     tertiary = DarkBlue,
-    onTertiary = androidx.compose.ui.graphics.Color.White,
+    onTertiary = SurfaceLight,
     tertiaryContainer = DarkBlue.copy(alpha = 0.1f),
     onTertiaryContainer = DarkBlue,
-    error = androidx.compose.ui.graphics.Color(0xFFE53E3E),
-    onError = androidx.compose.ui.graphics.Color.White,
-    errorContainer = androidx.compose.ui.graphics.Color(0xFFE53E3E).copy(alpha = 0.1f),
-    onErrorContainer = androidx.compose.ui.graphics.Color(0xFFE53E3E),
-    background = androidx.compose.ui.graphics.Color(0xFFF8F9FA),
-    onBackground = androidx.compose.ui.graphics.Color(0xFF1A1A1A),
-    surface = androidx.compose.ui.graphics.Color.White,
-    onSurface = androidx.compose.ui.graphics.Color(0xFF1A1A1A),
-    surfaceVariant = androidx.compose.ui.graphics.Color(0xFFF1F3F4),
-    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF424242),
-    outline = androidx.compose.ui.graphics.Color(0xFFBDBDBD),
-    outlineVariant = androidx.compose.ui.graphics.Color(0xFFE0E0E0)
+    error = ErrorRed,
+    onError = SurfaceLight,
+    errorContainer = ErrorRed.copy(alpha = 0.1f),
+    onErrorContainer = ErrorRed,
+    background = BackgroundLight,
+    onBackground = TextPrimaryLight,
+    surface = SurfaceLight,
+    onSurface = TextPrimaryLight,
+    surfaceVariant = BackgroundLight,
+    onSurfaceVariant = TextSecondaryLight,
+    outline = TextSecondaryLight,
+    outlineVariant = TextSecondaryLight.copy(alpha = 0.5f)
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Orange,
-    onPrimary = androidx.compose.ui.graphics.Color.Black,
-    primaryContainer = Orange.copy(alpha = 0.2f),
-    onPrimaryContainer = Orange,
-    secondary = Blue,
-    onSecondary = androidx.compose.ui.graphics.Color.Black,
-    secondaryContainer = Blue.copy(alpha = 0.2f),
-    onSecondaryContainer = Blue,
+    primary = PrimaryOrange,
+    onPrimary = BackgroundDark,
+    primaryContainer = PrimaryOrange.copy(alpha = 0.2f),
+    onPrimaryContainer = PrimaryOrange,
+    secondary = SecondaryBlue,
+    onSecondary = BackgroundDark,
+    secondaryContainer = SecondaryBlue.copy(alpha = 0.2f),
+    onSecondaryContainer = SecondaryBlue,
     tertiary = DarkBlue,
-    onTertiary = androidx.compose.ui.graphics.Color.White,
+    onTertiary = SurfaceLight,
     tertiaryContainer = DarkBlue.copy(alpha = 0.2f),
     onTertiaryContainer = DarkBlue,
-    error = androidx.compose.ui.graphics.Color(0xFFE53E3E),
-    onError = androidx.compose.ui.graphics.Color.Black,
-    errorContainer = androidx.compose.ui.graphics.Color(0xFFE53E3E).copy(alpha = 0.2f),
-    onErrorContainer = androidx.compose.ui.graphics.Color(0xFFE53E3E),
-    background = androidx.compose.ui.graphics.Color(0xFF121212),
-    onBackground = androidx.compose.ui.graphics.Color(0xFFE1E1E1),
-    surface = androidx.compose.ui.graphics.Color(0xFF1E1E1E),
-    onSurface = androidx.compose.ui.graphics.Color(0xFFE1E1E1),
-    surfaceVariant = androidx.compose.ui.graphics.Color(0xFF2C2C2C),
-    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFFBDBDBD),
-    outline = androidx.compose.ui.graphics.Color(0xFF666666),
-    outlineVariant = androidx.compose.ui.graphics.Color(0xFF404040)
+    error = ErrorRed,
+    onError = BackgroundDark,
+    errorContainer = ErrorRed.copy(alpha = 0.2f),
+    onErrorContainer = ErrorRed,
+    background = BackgroundDark,
+    onBackground = TextPrimaryDark,
+    surface = SurfaceDark,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceDark,
+    onSurfaceVariant = TextSecondaryDark,
+    outline = TextSecondaryDark,
+    outlineVariant = TextSecondaryDark.copy(alpha = 0.5f)
 )
 
 @Composable
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -97,7 +91,7 @@ fun AppTheme(
             val window = (view.context as Activity).window
             @Suppress("DEPRECATION")
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
