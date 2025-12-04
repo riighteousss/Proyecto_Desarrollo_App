@@ -54,8 +54,23 @@ class UserRepository(
         name: String,
         email: String,
         phone: String,
-        password: String? = null
+        password: String? = null,
+        currentPassword: String? = null // Contraseña actual (requerida cuando se cambia la contraseña)
     ): Result<UserEntity> {
-        return remoteDataSource.updateUser(userId, name, email, phone, password)
+        return remoteDataSource.updateUser(userId, name, email, phone, password, currentPassword)
+    }
+    
+    /**
+     * Solicitar recuperación de contraseña
+     */
+    suspend fun forgotPassword(email: String): Result<String> {
+        return remoteDataSource.forgotPassword(email)
+    }
+    
+    /**
+     * Resetear contraseña con token
+     */
+    suspend fun resetPassword(email: String, token: String, newPassword: String): Result<String> {
+        return remoteDataSource.resetPassword(email, token, newPassword)
     }
 }

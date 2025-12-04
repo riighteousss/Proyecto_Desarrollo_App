@@ -1,29 +1,27 @@
 package com.example.uinavegacion.ui.screen
 
-import androidx.compose.animation.*                            // Animaciones
-import androidx.compose.animation.core.*                       // Core animation
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background                 // Fondo
 import androidx.compose.foundation.layout.*                   // Box/Column/Row/Spacer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*                           // Material 3
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*                             // remember, Composable
 import androidx.compose.ui.Alignment                          // Alineaciones
 import androidx.compose.ui.Modifier                           // Modificador
 import androidx.compose.ui.text.input.*                       // KeyboardOptions/Types/Transformations
 import androidx.compose.ui.unit.dp                            // DPs
 import androidx.lifecycle.compose.collectAsStateWithLifecycle // Observa StateFlow
-import androidx.lifecycle.viewmodel.compose.viewModel         // Obtiene VM
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel         // ViewModel
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
-import com.example.uinavegacion.R
 import com.example.uinavegacion.data.local.storage.UserPreferences
-import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 //1 creamos la union con el viewmodel creado
@@ -38,15 +36,33 @@ fun RegisterScreenVm(
     val context = LocalContext.current
     val userPrefs = remember { UserPreferences(context) }
     val scope = rememberCoroutineScope()
+    
+    // Estado para mostrar Dialog de éxito
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    if (state.success) {                                     // Si registro fue exitoso
-        LaunchedEffect(state.success) {
+    // Manejo de registro exitoso con delay
+    LaunchedEffect(state.success) {
+        if (state.success) {
+            // Mostrar Dialog de éxito
+            showSuccessDialog = true
+            
             scope.launch {
                 // Limpiar cualquier sesión previa al registrar nuevo usuario
                 userPrefs.clearSession()
+                
+                // ⚠️ CRÍTICO: Delay de 2.5 segundos para que el usuario lea el mensaje
+                kotlinx.coroutines.delay(2500)
+                
+                // Ocultar dialog
+                showSuccessDialog = false
+                vm.clearRegisterResult()
+                
+                // Pequeño delay para cerrar el dialog suavemente
+                kotlinx.coroutines.delay(300)
+                
+                // ⚠️ Navegar a Login después del delay
+                onRegisteredNavigateLogin()
             }
-            vm.clearRegisterResult()                             // Limpia banderas
-            onRegisteredNavigateLogin()                          // Navega a Login
         }
     }
 
@@ -76,6 +92,35 @@ fun RegisterScreenVm(
         onSubmit = vm::submitRegister,                       // Acción Registrar
         onGoLogin = onGoLogin                                // Ir a Login
     )
+    
+    // ⚠️ CRÍTICO: Dialog de éxito visible para el usuario
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { /* No permitir cerrar manualmente */ },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Éxito",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = {
+                Text(
+                    text = "¡Cuenta creada exitosamente!",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            },
+            text = {
+                Text(
+                    text = "Tu cuenta ha sido registrada correctamente. Serás redirigido al inicio de sesión...",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                // No mostrar botón, el dialog se cierra automáticamente
+            }
+        )
+    }
 }
 
 

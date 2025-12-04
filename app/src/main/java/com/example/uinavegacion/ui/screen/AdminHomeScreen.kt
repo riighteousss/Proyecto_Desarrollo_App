@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.background
@@ -384,4 +385,5 @@ data class AdminActivity(
     val time: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )
+
 

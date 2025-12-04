@@ -28,6 +28,8 @@ sealed class Route(val path: String) { // Cada objeto representa una pantalla
     data object Camera          : Route("camera")
     data object RequestHistory  : Route("request_history")
     data object Splash          : Route("splash")
+    data object ForgotPassword  : Route("forgot_password")
+    data object ResetPassword   : Route("reset_password")
 }
 
 /**

@@ -26,6 +26,7 @@ import com.example.uinavegacion.data.repository.ServiceRepository
 import com.example.uinavegacion.data.repository.VehicleRepository
 import com.example.uinavegacion.data.repository.AddressRepository
 import com.example.uinavegacion.data.repository.MechanicRepository
+import com.example.uinavegacion.data.repository.ImageRepository
 import com.example.uinavegacion.navigation.AppNavGraph
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel
 import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
@@ -96,7 +97,8 @@ fun AppRoot(
         RemoteDataSource(
             userApiService = RetrofitClient.userApiService,
             serviceRequestApiService = RetrofitClient.serviceRequestApiService,
-            vehicleApiService = RetrofitClient.vehicleApiService
+            vehicleApiService = RetrofitClient.vehicleApiService,
+            imageApiService = RetrofitClient.imageApiService
         )
     }
     
@@ -109,6 +111,7 @@ fun AppRoot(
     val serviceRepository = remember { ServiceRepository(db.serviceRequestDao()) } // Mantener por compatibilidad
     val addressRepository = remember { AddressRepository(db.addressDao()) }
     val mechanicRepository = remember { MechanicRepository(db.mechanicDao()) }
+    val imageRepository = remember { ImageRepository(db.imageDao(), context) }
     
     // ViewModels
     val authViewModel: AuthViewModel = viewModel(
@@ -141,7 +144,9 @@ fun AppRoot(
                 roleViewModel = roleViewModel,
                 db = db,
                 requestFormViewModel = requestFormViewModel,
-                serviceRequestRepository = serviceRequestRepository
+                serviceRequestRepository = serviceRequestRepository,
+                imageRepository = imageRepository,
+                remoteDataSource = remoteDataSource
             ) // Carga el NavHost + Scaffold + Drawer
         }
     }

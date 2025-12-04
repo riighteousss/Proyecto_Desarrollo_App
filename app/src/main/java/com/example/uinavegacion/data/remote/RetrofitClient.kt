@@ -1,5 +1,6 @@
 package com.example.uinavegacion.data.remote
 
+import com.example.uinavegacion.data.remote.api.ImageApiService
 import com.example.uinavegacion.data.remote.api.ServiceRequestApiService
 import com.example.uinavegacion.data.remote.api.UserApiService
 import okhttp3.OkHttpClient
@@ -23,14 +24,16 @@ object RetrofitClient {
     private const val BASE_URL_USUARIOS = "http://10.0.2.2:8081/" // Emulador Android
     private const val BASE_URL_SOLICITUDES = "http://10.0.2.2:8082/" // Emulador Android
     private const val BASE_URL_VEHICULOS = "http://10.0.2.2:8085/" // Emulador Android
+    private const val BASE_URL_IMAGENES = "http://10.0.2.2:8083/" // Emulador Android
     
     // Para dispositivo físico, usar la IP de tu PC:
     // private const val BASE_URL_USUARIOS = "http://192.168.1.X:8081/"
     // private const val BASE_URL_SOLICITUDES = "http://192.168.1.X:8082/"
     // private const val BASE_URL_VEHICULOS = "http://192.168.1.X:8085/"
+    // private const val BASE_URL_IMAGENES = "http://192.168.1.X:8083/"
     
     /**
-     * Cliente HTTP con logging y timeouts configurados
+     * Cliente HTTP con logging y timeouts configurados (para operaciones normales)
      */
     private val okHttpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -42,6 +45,23 @@ object RetrofitClient {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+    
+    /**
+     * Cliente HTTP específico para imágenes con timeouts más largos
+     * (necesario para subir imágenes grandes)
+     */
+    private val okHttpClientForImages: OkHttpClient by lazy {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        
+        OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(60, TimeUnit.SECONDS) // 60 segundos para conectar
+            .readTimeout(120, TimeUnit.SECONDS) // 2 minutos para leer (imágenes grandes)
+            .writeTimeout(120, TimeUnit.SECONDS) // 2 minutos para escribir (subir imágenes)
             .build()
     }
     
@@ -79,6 +99,17 @@ object RetrofitClient {
     }
     
     /**
+     * Retrofit para el servicio de imágenes (usa cliente con timeouts más largos)
+     */
+    private val retrofitImagenes: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL_IMAGENES)
+            .client(okHttpClientForImages) // Usar cliente con timeouts más largos para imágenes
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+    
+    /**
      * API Service para usuarios
      */
     val userApiService: UserApiService by lazy {
@@ -97,6 +128,13 @@ object RetrofitClient {
      */
     val vehicleApiService: com.example.uinavegacion.data.remote.api.VehicleApiService by lazy {
         retrofitVehiculos.create(com.example.uinavegacion.data.remote.api.VehicleApiService::class.java)
+    }
+    
+    /**
+     * API Service para imágenes
+     */
+    val imageApiService: ImageApiService by lazy {
+        retrofitImagenes.create(ImageApiService::class.java)
     }
 }
 

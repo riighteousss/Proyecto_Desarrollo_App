@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import android.net.Uri
@@ -481,3 +482,4 @@ private fun ServiceTypeChip(
         }
     }
 }
+

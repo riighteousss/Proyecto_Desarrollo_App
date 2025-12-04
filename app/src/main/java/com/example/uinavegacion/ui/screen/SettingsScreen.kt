@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.background
@@ -724,3 +725,4 @@ data class SettingsItem(
     val textColor: Color? = null,
     val trailingContent: (@Composable () -> Unit)? = null
 )
+

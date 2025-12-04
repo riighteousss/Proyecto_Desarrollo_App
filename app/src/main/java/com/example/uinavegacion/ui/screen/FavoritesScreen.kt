@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.background
@@ -296,4 +297,5 @@ data class MechanicFavorite(
     val isAvailable: Boolean,
     val lastService: String
 )
+
 

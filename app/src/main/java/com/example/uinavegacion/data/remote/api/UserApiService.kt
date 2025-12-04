@@ -1,6 +1,8 @@
 package com.example.uinavegacion.data.remote.api
 
+import com.example.uinavegacion.data.remote.dto.ForgotPasswordRequestDTO
 import com.example.uinavegacion.data.remote.dto.LoginRequestDTO
+import com.example.uinavegacion.data.remote.dto.ResetPasswordRequestDTO
 import com.example.uinavegacion.data.remote.dto.UserDTO
 import com.example.uinavegacion.data.remote.dto.UserRequestDTO
 import retrofit2.Response
@@ -58,5 +60,19 @@ interface UserApiService {
      */
     @POST("api/users/login")
     suspend fun login(@Body loginRequest: LoginRequestDTO): Response<UserDTO>
+    
+    /**
+     * Solicitar recuperación de contraseña
+     * Envía un email con token de recuperación
+     */
+    @POST("api/users/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequestDTO): Response<Map<String, String>>
+    
+    /**
+     * Resetear contraseña con token
+     * Valida el token y actualiza la contraseña
+     */
+    @POST("api/users/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequestDTO): Response<Map<String, String>>
 }
 

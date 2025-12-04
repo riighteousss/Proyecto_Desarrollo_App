@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,18 +50,26 @@ fun AppNavGraph(navController: NavHostController,
                 roleViewModel: RoleViewModel,
                 db: com.example.uinavegacion.data.local.database.AppDatabase,
                 requestFormViewModel: RequestFormViewModel,
-                serviceRequestRepository: com.example.uinavegacion.data.repository.ServiceRequestRepository) { // Recibe el controlador
+                serviceRequestRepository: com.example.uinavegacion.data.repository.ServiceRequestRepository,
+                imageRepository: com.example.uinavegacion.data.repository.ImageRepository,
+                remoteDataSource: com.example.uinavegacion.data.remote.RemoteDataSource) { // Recibe el controlador
 
     val scope = rememberCoroutineScope() // Necesario para corrutinas
     val context = LocalContext.current
     val userPrefs = remember { UserPreferences(context) }
     
-    // Función helper para logout que limpia DataStore
+    // Inicializar RoleViewModel con contexto para DataStore
+    LaunchedEffect(Unit) {
+        roleViewModel.initialize(context)
+    }
+    
+    // Función helper para logout que limpia DataStore y restablece RoleSelection
     val performLogout: () -> Unit = {
         scope.launch {
             userPrefs.clearSession()
         }
         authViewModel.logout()
+        roleViewModel.logout() // Restablecer isFirstTime para mostrar RoleSelection
     }
     
     // Estados observables
@@ -128,14 +137,12 @@ fun AppNavGraph(navController: NavHostController,
             NavHost( // Contenedor de destinos navegables
                 navController = navController, // Controlador
                 startDestination = when {
-                    isFirstTime -> Route.RoleSelection.path
-                    // Solo redirigir a Home/MechanicHome/AdminHome si el usuario está logueado
+                    // ⚠️ PRIORIDAD 1: Si el usuario está logueado, ir directamente a su pantalla principal
                     isLoggedIn && currentRole == UserRole.MECHANIC -> Route.MechanicHome.path
                     isLoggedIn && currentRole == UserRole.ADMIN -> Route.AdminHome.path
                     isLoggedIn -> Route.Home.path
-                    // Si no está logueado pero tiene rol seleccionado, ir a Login
-                    currentRole != null -> Route.Login.path
-                    // Si no tiene rol ni está logueado, ir a RoleSelection
+                    // ⚠️ PRIORIDAD 2: Si NO está logueado, SIEMPRE mostrar RoleSelection primero
+                    // (El usuario puede cambiar de rol o continuar con el rol guardado)
                     else -> Route.RoleSelection.path
                 }, // Inicio basado en rol y estado de login
                 modifier = Modifier.padding(
@@ -167,10 +174,10 @@ fun AppNavGraph(navController: NavHostController,
                     ScheduleScreen(onConfirmed = { navController.navigate(Route.Mechanics.path) }, serviceViewModel = serviceViewModel)
                 }
                 composable(Route.Emergency.path) {
+                    // Redirigir a EmergencyService para evitar duplicación
                     EmergencyScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { type, description, location ->
-                            // Guardar solicitud de emergencia en el microservicio
                             scope.launch {
                                 if (currentUserId > 0) {
                                     val emergencyRequest = com.example.uinavegacion.data.remote.dto.ServiceRequestRequestDTO(
@@ -213,8 +220,9 @@ fun AppNavGraph(navController: NavHostController,
                         onEditProfile = { navController.navigate(Route.EditProfile.path) },
                         onLogout = { 
                             performLogout()
-                            navController.navigate(Route.Home.path) {
-                                popUpTo(Route.Home.path) { inclusive = true }
+                            // Después de logout, volver a RoleSelection (pantalla inicial)
+                            navController.navigate(Route.RoleSelection.path) {
+                                popUpTo(Route.RoleSelection.path) { inclusive = true }
                             }
                         },
                         isDarkMode = isDarkMode
@@ -245,7 +253,8 @@ fun AppNavGraph(navController: NavHostController,
                                 else -> goHome() // Cliente va a Home
                             }
                         },
-                        onGoRegister = goRegister // Enlace para ir a la pantalla de Registro
+                        onGoRegister = goRegister, // Enlace para ir a la pantalla de Registro
+                        onGoForgotPassword = { navController.navigate(Route.ForgotPassword.path) } // Enlace para recuperar contraseña
                     )
                 }
                 composable(Route.Register.path) { // Destino Registro
@@ -266,8 +275,9 @@ fun AppNavGraph(navController: NavHostController,
                         onToggleDarkMode = { themeViewModel.toggleDarkMode() },
                         onLogout = { 
                             performLogout()
-                            navController.navigate(Route.Home.path) {
-                                popUpTo(Route.Home.path) { inclusive = true }
+                            // Después de logout, volver a RoleSelection (pantalla inicial)
+                            navController.navigate(Route.RoleSelection.path) {
+                                popUpTo(Route.RoleSelection.path) { inclusive = true }
                             }
                         },
                         onChangeRole = { navController.navigate(Route.RoleSelection.path) },
@@ -302,8 +312,8 @@ fun AppNavGraph(navController: NavHostController,
                     )
                 }
                 
-                // Nuevas pantallas de servicios rápidos
-                composable(Route.EmergencyService.path) { // Destino Emergencia
+                // Pantalla de servicios de emergencia
+                composable(Route.EmergencyService.path) { // Destino Emergencia desde HomeScreen
                     EmergencyScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { type, description, location ->
@@ -331,24 +341,69 @@ fun AppNavGraph(navController: NavHostController,
                     RequestServiceScreen(
                         onGoBack = { navController.popBackStack() },
                         onRequestService = { service, vehicle, description, images ->
-                            // Guardar solicitud en el microservicio
+                            // Guardar solicitud en el microservicio con persistencia obligatoria de imágenes
                             val currentUserId = authViewModel.getCurrentUserId() ?: 1L
                             scope.launch {
                                 try {
+                                    // 1. Crear la solicitud primero
                                     val requestDTO = com.example.uinavegacion.data.remote.dto.ServiceRequestRequestDTO(
                                         userId = currentUserId,
                                         serviceType = service,
                                         vehicleInfo = vehicle,
                                         description = description,
-                                        images = images.joinToString(","),
+                                        images = "", // Se actualizará después de subir las imágenes
                                         location = "",
                                         notes = ""
                                     )
-                                    val result = serviceRequestRepository.createRequest(requestDTO)
-                                    result.onSuccess {
-                                        // Solicitud guardada exitosamente en el microservicio
+                                    val createResult = serviceRequestRepository.createRequest(requestDTO)
+                                    
+                                    createResult.onSuccess { createdRequest ->
+                                        val requestId = createdRequest.id
+                                        
+                                        // 2. Guardar imágenes en BD local
+                                        val localImageIds = mutableListOf<Long>()
+                                        for (imageUri in images) {
+                                            val saveResult = imageRepository.saveImageFromUri(requestId, imageUri)
+                                            saveResult.onSuccess { localImageId ->
+                                                localImageIds.add(localImageId)
+                                            }
+                                        }
+                                        
+                                        // 3. Enviar todas las imágenes al microservicio de imágenes
+                                        val uploadedImageIds = mutableListOf<Long>()
+                                        for (imageUri in images) {
+                                            val uri = android.net.Uri.parse(imageUri)
+                                            val base64Data = com.example.uinavegacion.util.ImageUtils.uriToBase64(context, uri)
+                                            
+                                            if (base64Data != null) {
+                                                val uploadResult = remoteDataSource.uploadImage(
+                                                    userId = currentUserId,
+                                                    requestId = requestId,
+                                                    base64Data = base64Data,
+                                                    fileName = com.example.uinavegacion.util.ImageUtils.getFileName(uri),
+                                                    mimeType = com.example.uinavegacion.util.ImageUtils.getMimeType(context, uri)
+                                                )
+                                                uploadResult.onSuccess { imageId ->
+                                                    uploadedImageIds.add(imageId)
+                                                }
+                                            }
+                                        }
+                                        
+                                        // 4. Actualizar la solicitud con los IDs de las imágenes subidas
+                                        if (uploadedImageIds.isNotEmpty()) {
+                                            val updatedRequestDTO = com.example.uinavegacion.data.remote.dto.ServiceRequestRequestDTO(
+                                                userId = currentUserId,
+                                                serviceType = service,
+                                                vehicleInfo = vehicle,
+                                                description = description,
+                                                images = uploadedImageIds.joinToString(","),
+                                                location = "",
+                                                notes = ""
+                                            )
+                                            serviceRequestRepository.updateRequest(requestId, updatedRequestDTO)
+                                        }
                                     }.onFailure {
-                                        // Error al guardar - se puede mostrar un mensaje al usuario
+                                        // Error al crear solicitud - se puede mostrar un mensaje al usuario
                                     }
                                 } catch (e: Exception) {
                                     // Manejar error
@@ -486,10 +541,23 @@ fun AppNavGraph(navController: NavHostController,
                     
                     EditProfileScreen(
                         userEmail = userEmail, // Pasar el email del usuario logueado para cargar desde el microservicio
-                        onGoBack = { navController.popBackStack() },
+                        onGoBack = { 
+                            // ⚠️ Navegar de forma segura al Home para evitar pantallas blancas
+                            navController.navigate(Route.Home.path) {
+                                // Limpiar la pila de navegación hasta Home (incluyendo EditProfile)
+                                popUpTo(Route.Home.path) { inclusive = false }
+                                // Evitar múltiples instancias de Home
+                                launchSingleTop = true
+                            }
+                        },
                         onSaveProfile = { name, email, phone, imageUri ->
-                            // TODO: Implementar guardado de perfil
-                            navController.popBackStack()
+                            // ⚠️ Navegar de forma segura al Home después de guardar
+                            navController.navigate(Route.Home.path) {
+                                // Limpiar la pila de navegación hasta Home (incluyendo EditProfile)
+                                popUpTo(Route.Home.path) { inclusive = false }
+                                // Evitar múltiples instancias de Home
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -516,7 +584,19 @@ fun AppNavGraph(navController: NavHostController,
                     RequestHistoryScreen(
                         userId = currentUserId,
                         serviceRequestRepository = serviceRequestRepository,
+                        remoteDataSource = remoteDataSource,
                         onGoBack = { navController.popBackStack() }
+                    )
+                }
+                
+                composable(Route.ForgotPassword.path) { // Destino Recuperar Contraseña
+                    ForgotPasswordScreen(
+                        onGoBack = { navController.popBackStack() },
+                        onPasswordReset = {
+                            navController.navigate(Route.Login.path) {
+                                popUpTo(Route.ForgotPassword.path) { inclusive = true }
+                            }
+                        }
                     )
                 }
             }

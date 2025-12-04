@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.background
@@ -403,4 +404,5 @@ data class Appointment(
     val status: String,
     val location: String
 )
+
 

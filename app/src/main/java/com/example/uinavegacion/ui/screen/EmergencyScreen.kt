@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.background
@@ -283,3 +284,4 @@ private fun EmergencyTypeCard(
         }
     }
 }
+

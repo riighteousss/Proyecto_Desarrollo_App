@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import android.net.Uri
@@ -56,6 +57,7 @@ import java.util.*
 fun RequestHistoryScreen(
     userId: Long,
     serviceRequestRepository: com.example.uinavegacion.data.repository.ServiceRequestRepository,
+    remoteDataSource: com.example.uinavegacion.data.remote.RemoteDataSource,
     onGoBack: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -296,6 +298,7 @@ fun RequestHistoryScreen(
                 items(requests) { request ->
                     RequestHistoryCard(
                         request = request,
+                        remoteDataSource = remoteDataSource,
                         onViewDetails = { 
                             // Abrir diálogo de edición para esta solicitud
                             selectedRequestForDetails = request
@@ -337,6 +340,7 @@ fun RequestHistoryScreen(
         selectedRequestForDetails?.let { request ->
             RequestDetailsDialog(
                 request = request,
+                remoteDataSource = remoteDataSource,
                 onDismiss = { selectedRequestForDetails = null },
                 onSave = { updatedRequest ->
                     // Recargar la lista de solicitudes después de guardar cambios
@@ -374,6 +378,7 @@ fun RequestHistoryScreen(
 @Composable
 fun RequestHistoryCard(
     request: ServiceRequestDTO,
+    remoteDataSource: com.example.uinavegacion.data.remote.RemoteDataSource,
     onViewDetails: () -> Unit,
     onCancelRequest: () -> Unit,
     serviceRequestRepository: com.example.uinavegacion.data.repository.ServiceRequestRepository? = null
@@ -470,33 +475,11 @@ fun RequestHistoryCard(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(imageList) { imagePath ->
-                            val uri = tryParseUri(imagePath.trim())
-                            if (uri != null) {
-                                // Mostrar imagen si se puede parsear el URI
-                                AsyncImage(
-                                    model = uri,
-                                    contentDescription = "Foto del problema",
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                // Placeholder si la imagen no se puede cargar
-                                Box(
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Image,
-                                        contentDescription = "Imagen no disponible",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
+                            RequestImageThumbnail(
+                                imagePath = imagePath.trim(),
+                                remoteDataSource = remoteDataSource,
+                                modifier = Modifier.size(80.dp)
+                            )
                         }
                     }
                 }
@@ -585,6 +568,7 @@ fun RequestHistoryCard(
 @Composable
 fun RequestDetailsDialog(
     request: ServiceRequestDTO,
+    remoteDataSource: com.example.uinavegacion.data.remote.RemoteDataSource,
     onDismiss: () -> Unit,
     onSave: (ServiceRequestDTO) -> Unit,
     serviceRequestRepository: com.example.uinavegacion.data.repository.ServiceRequestRepository
@@ -787,22 +771,11 @@ fun RequestDetailsDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         items(imageList) { imagePath ->
-                            val uri = tryParseUri(imagePath.trim())
-                            if (uri != null) {
-                                Card(
-                                    modifier = Modifier.size(120.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                ) {
-                                    AsyncImage(
-                                        model = uri,
-                                        contentDescription = "Foto del problema",
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(8.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                            }
+                            RequestImageThumbnail(
+                                imagePath = imagePath.trim(),
+                                remoteDataSource = remoteDataSource,
+                                modifier = Modifier.size(120.dp)
+                            )
                         }
                     }
                 }
@@ -898,3 +871,102 @@ private fun tryParseUri(path: String): android.net.Uri? {
         null
     }
 }
+
+/**
+ * Componente que muestra una miniatura de imagen
+ * Detecta si el path es un ID numérico y descarga la imagen desde el microservicio
+ */
+@Composable
+private fun RequestImageThumbnail(
+    imagePath: String,
+    remoteDataSource: com.example.uinavegacion.data.remote.RemoteDataSource,
+    modifier: Modifier = Modifier
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var imageUri by remember(imagePath) { mutableStateOf<android.net.Uri?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var hasError by remember { mutableStateOf(false) }
+    
+    // Detectar si es un ID numérico
+    val imageId = imagePath.toLongOrNull()
+    
+    LaunchedEffect(imagePath) {
+        if (imageId != null) {
+            // Es un ID, descargar desde el microservicio
+            isLoading = true
+            hasError = false
+            try {
+                val result = remoteDataSource.getImageById(imageId)
+                result.onSuccess { imageData ->
+                    // Si el microservicio devuelve base64, convertir a URI local
+                    imageData.base64Data?.let { base64 ->
+                        try {
+                            // Decodificar base64 a ByteArray
+                            val imageBytes = android.util.Base64.decode(base64, android.util.Base64.NO_WRAP)
+                            
+                            // Guardar temporalmente en cache y crear URI
+                            val cacheDir = context.cacheDir
+                            val imageFile = java.io.File(cacheDir, "request_image_${imageId}.${imageData.mimeType?.substringAfterLast("/") ?: "jpg"}")
+                            imageFile.writeBytes(imageBytes)
+                            
+                            imageUri = android.net.Uri.fromFile(imageFile)
+                            isLoading = false
+                            hasError = false
+                        } catch (e: Exception) {
+                            isLoading = false
+                            hasError = true
+                        }
+                    } ?: run {
+                        // Si no hay base64, mostrar error
+                        isLoading = false
+                        hasError = true
+                    }
+                }.onFailure {
+                    isLoading = false
+                    hasError = true
+                }
+            } catch (e: Exception) {
+                isLoading = false
+                hasError = true
+            }
+        } else {
+            // Es un URI local, intentar parsearlo
+            imageUri = tryParseUri(imagePath)
+            hasError = imageUri == null
+        }
+    }
+    
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            isLoading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
+            }
+            imageUri != null -> {
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = "Foto del problema",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            else -> {
+                // Placeholder si la imagen no se puede cargar
+                Icon(
+                    imageVector = Icons.Filled.Image,
+                    contentDescription = "Imagen no disponible",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+    }
+}
+

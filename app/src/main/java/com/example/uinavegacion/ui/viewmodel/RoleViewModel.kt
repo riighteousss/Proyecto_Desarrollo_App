@@ -1,13 +1,27 @@
 package com.example.uinavegacion.ui.viewmodel
 
+import android.app.Application
+import android.content.Context
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
+// DataStore para el rol del usuario
+private val Context.roleDataStore by preferencesDataStore(name = "role_prefs")
+
 class RoleViewModel : ViewModel() {
+    
+    // Key para DataStore
+    private val roleKey = stringPreferencesKey("selected_role")
     
     // Estado del rol actual
     private val _currentRole = MutableStateFlow<UserRole?>(null)
@@ -21,9 +35,18 @@ class RoleViewModel : ViewModel() {
     private val _isFirstTime = MutableStateFlow(true)
     val isFirstTime: StateFlow<Boolean> = _isFirstTime.asStateFlow()
     
-    init {
-        // En una app real, aquí cargarías el rol desde SharedPreferences o base de datos
-        loadSavedRole()
+    // Contexto para DataStore (se inicializa cuando se llama desde la UI)
+    private var appContext: Context? = null
+    
+    /**
+     * Inicializa el contexto para DataStore
+     * Debe llamarse desde la UI antes de usar otras funciones
+     */
+    fun initialize(context: Context) {
+        if (appContext == null) {
+            appContext = context.applicationContext
+            loadSavedRole()
+        }
     }
     
     fun selectRole(role: UserRole) {
@@ -31,8 +54,6 @@ class RoleViewModel : ViewModel() {
             _currentRole.value = role
             _hasSelectedRole.value = true
             _isFirstTime.value = false
-            
-            // En una app real, aquí guardarías el rol en SharedPreferences
             saveRole(role)
         }
     }
@@ -54,22 +75,39 @@ class RoleViewModel : ViewModel() {
     }
     
     private fun loadSavedRole() {
-        // En una app real, cargarías desde SharedPreferences
-        // Por ahora, simulamos que no hay rol guardado
         viewModelScope.launch {
-            // Simular carga de datos
-            // _currentRole.value = loadFromPreferences()
+            appContext?.let { context ->
+                val savedRole = context.roleDataStore.data
+                    .map { prefs -> prefs[roleKey] }
+                    .first()
+                
+                if (savedRole != null) {
+                    _currentRole.value = UserRole.valueOf(savedRole)
+                    _hasSelectedRole.value = true
+                    _isFirstTime.value = false
+                }
+            }
         }
     }
     
     private fun saveRole(role: UserRole) {
-        // En una app real, guardarías en SharedPreferences
-        // saveToPreferences(role)
+        viewModelScope.launch {
+            appContext?.let { context ->
+                context.roleDataStore.edit { prefs ->
+                    prefs[roleKey] = role.name
+                }
+            }
+        }
     }
     
     private fun clearSavedRole() {
-        // En una app real, limpiarías SharedPreferences
-        // clearPreferences()
+        viewModelScope.launch {
+            appContext?.let { context ->
+                context.roleDataStore.edit { prefs ->
+                    prefs.remove(roleKey)
+                }
+            }
+        }
     }
 }
 

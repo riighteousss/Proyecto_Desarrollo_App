@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -63,6 +64,7 @@ fun EditProfileScreen(
     var email by remember { mutableStateOf(initialEmail) }
     var phone by remember { mutableStateOf(initialPhone) }
     var profileImageUri by remember { mutableStateOf<String?>(null) }
+    var pendingImageUri by remember { mutableStateOf<android.net.Uri?>(null) } // Nueva imagen pendiente de subir
     var showPasswordSection by remember { mutableStateOf(false) }
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
@@ -86,14 +88,21 @@ fun EditProfileScreen(
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) } // Dialog de éxito
+    
+    // RemoteDataSource para subir imágenes
+    val remoteDataSource = remember {
+        RemoteDataSource(
+            userApiService = RetrofitClient.userApiService,
+            serviceRequestApiService = RetrofitClient.serviceRequestApiService,
+            vehicleApiService = RetrofitClient.vehicleApiService,
+            imageApiService = RetrofitClient.imageApiService
+        )
+    }
     
     // Repository para actualizar en el microservicio
     val userRepository = remember {
-        UserRepository(RemoteDataSource(
-            userApiService = RetrofitClient.userApiService,
-            serviceRequestApiService = RetrofitClient.serviceRequestApiService,
-            vehicleApiService = RetrofitClient.vehicleApiService
-        ))
+        UserRepository(remoteDataSource)
     }
     
     // Cargar imagen de perfil desde ProfileViewModel
@@ -182,17 +191,6 @@ fun EditProfileScreen(
             isLoading = false
         }
     }
-
-    // Launcher para seleccionar imagen de la galería
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            profileImageUri = it.toString()
-            // Guardar la imagen inmediatamente en ProfileViewModel
-            profileViewModel.updateProfile(name, email, phone, it.toString(), context)
-        }
-    }
     
     // Función helper para obtener el userId correcto
     suspend fun getValidUserId(): Long {
@@ -208,8 +206,21 @@ fun EditProfileScreen(
         }
         return -1L
     }
+
+    // Launcher para seleccionar imagen de la galería
+    // ⚠️ MODIFICADO: Solo muestra la imagen como previsualización, NO la sube al servidor
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            // Solo guardar la URI localmente para previsualización
+            profileImageUri = it.toString()
+            pendingImageUri = it // Guardar URI pendiente de subir cuando se presione "Guardar"
+        }
+    }
     
     // Función para guardar cambios
+    // ⚠️ MODIFICADA: Ahora sube la imagen solo cuando se presiona "Guardar"
     fun saveChanges() {
         errorMessage = ""
         successMessage = ""
@@ -246,40 +257,70 @@ fun EditProfileScreen(
         
         scope.launch {
             isLoading = true
+            errorMessage = ""
+            successMessage = ""
+            
             try {
-                // Si se está cambiando la contraseña, validar la contraseña actual primero
-                if (showPasswordSection && currentPassword.isNotEmpty()) {
-                    // Intentar login con la contraseña actual para validarla
-                    val loginResult = userRepository.login(email, currentPassword)
-                    if (loginResult.isFailure) {
-                        errorMessage = "La contraseña actual es incorrecta"
-                        isLoading = false
-                        return@launch
-                    }
-                }
-                
-                // Obtener userId válido (intentar obtenerlo del email si no está disponible)
                 val currentUserId = getValidUserId()
                 
                 if (currentUserId > 0) {
+                    var uploadedImageId: Long? = null
+                    
+                    // ⚠️ PASO 1: Subir imagen si hay una nueva pendiente
+                    if (pendingImageUri != null) {
+                        try {
+                            val base64Data = com.example.uinavegacion.util.ImageUtils.uriToBase64(context, pendingImageUri!!)
+                            
+                            if (base64Data != null) {
+                                val uploadResult = remoteDataSource.uploadImage(
+                                    userId = currentUserId,
+                                    requestId = null,
+                                    base64Data = base64Data,
+                                    fileName = com.example.uinavegacion.util.ImageUtils.getFileName(pendingImageUri!!),
+                                    mimeType = com.example.uinavegacion.util.ImageUtils.getMimeType(context, pendingImageUri!!)
+                                )
+                                
+                                uploadResult.onSuccess { imageId ->
+                                    uploadedImageId = imageId
+                                }.onFailure { error ->
+                                    errorMessage = "Error al subir imagen: ${error.message}. Los datos se actualizarán sin la imagen."
+                                }
+                            }
+                        } catch (e: Exception) {
+                            errorMessage = "Error al procesar imagen: ${e.message}. Los datos se actualizarán sin la imagen."
+                        }
+                    }
+                    
+                    // ⚠️ PASO 2: Actualizar datos del perfil
+                    val isChangingPassword = showPasswordSection && newPassword.isNotEmpty() && currentPassword.isNotEmpty()
+                    
                     val result = userRepository.updateUser(
                         userId = currentUserId,
                         name = name,
                         email = email,
                         phone = phone,
-                        password = if (showPasswordSection && newPassword.isNotEmpty() && currentPassword.isNotEmpty()) newPassword else null
+                        password = if (isChangingPassword) newPassword else null,
+                        currentPassword = if (isChangingPassword) currentPassword else null
                     )
                     
                     result.onSuccess {
-                        // Actualizar UserPreferences con los nuevos datos
+                        // ✅ ÉXITO: Actualizar UserPreferences
                         userPrefs.setUserName(name)
                         userPrefs.setUserEmail(email)
                         userPrefs.setUserPhone(phone)
                         
-                        // Actualizar ProfileViewModel con la imagen de perfil
-                        profileViewModel.updateProfile(name, email, phone, profileImageUri, context)
+                        // Actualizar ProfileViewModel con la imagen (si se subió)
+                        profileViewModel.updateProfile(
+                            name, email, phone,
+                            profileImageUri,
+                            context,
+                            uploadedImageId
+                        )
                         
-                        successMessage = "Perfil actualizado correctamente"
+                        // Limpiar imagen pendiente
+                        if (pendingImageUri != null) {
+                            pendingImageUri = null
+                        }
                         
                         // Limpiar campos de contraseña
                         if (showPasswordSection) {
@@ -289,18 +330,37 @@ fun EditProfileScreen(
                             confirmPassword = ""
                         }
                         
-                        // Llamar al callback
+                        // Mostrar Dialog de éxito
+                        showSuccessDialog = true
+                        isLoading = false
+                        
+                        // Delay de 2.5 segundos antes de navegar
+                        kotlinx.coroutines.delay(2500)
+                        
+                        // Cerrar dialog y navegar
+                        showSuccessDialog = false
+                        kotlinx.coroutines.delay(300)
+                        
+                        // ⚠️ Navegar a Home de forma segura
                         onSaveProfile(name, email, phone, profileImageUri)
-                    }.onFailure {
-                        errorMessage = "Error al actualizar: ${it.message ?: "Error desconocido"}"
+                    }.onFailure { error ->
+                        isLoading = false
+                        val errorMsg = error.message ?: "Error desconocido"
+                        
+                        if (errorMsg.contains("contraseña actual", ignoreCase = true) || 
+                            errorMsg.contains("incorrecta", ignoreCase = true)) {
+                            errorMessage = "Error: La contraseña actual es incorrecta"
+                        } else {
+                            errorMessage = "Error: $errorMsg"
+                        }
                     }
                 } else {
+                    isLoading = false
                     errorMessage = "Usuario no encontrado. Por favor, inicia sesión nuevamente."
                 }
             } catch (e: Exception) {
-                errorMessage = "Error: ${e.message}"
-            } finally {
                 isLoading = false
+                errorMessage = "Error: ${e.message ?: "Error desconocido"}"
             }
         }
     }
@@ -911,5 +971,35 @@ fun EditProfileScreen(
                 }
             }
         }
+        
+        // ⚠️ CRÍTICO: Dialog de éxito visible para el usuario
+        if (showSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = { /* No permitir cerrar manualmente */ },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Éxito",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                title = {
+                    Text(
+                        text = "¡Datos actualizados!",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Tu perfil ha sido actualizado correctamente. Serás redirigido en un momento...",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    // No mostrar botón, el dialog se cierra automáticamente
+                }
+            )
+        }
     }
 }
+

@@ -17,6 +17,8 @@ import com.example.uinavegacion.data.local.address.AddressEntity
 import com.example.uinavegacion.data.local.address.AddressDao
 import com.example.uinavegacion.data.local.request.RequestHistoryEntity
 import com.example.uinavegacion.data.local.request.RequestHistoryDao
+import com.example.uinavegacion.data.local.image.ImageEntity
+import com.example.uinavegacion.data.local.image.ImageDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,8 +35,8 @@ import kotlinx.coroutines.launch
  * - MechanicEntity: Mecánicos disponibles
  */
 @Database(
-    entities = [UserEntity::class, ServiceRequest::class, MechanicEntity::class, VehicleEntity::class, AddressEntity::class, RequestHistoryEntity::class],
-    version = 3,
+    entities = [UserEntity::class, ServiceRequest::class, MechanicEntity::class, VehicleEntity::class, AddressEntity::class, RequestHistoryEntity::class, ImageEntity::class],
+    version = 5, // Incrementado por agregar tabla de imágenes con BLOB
     exportSchema = true
 )
 abstract class AppDatabase: RoomDatabase(){
@@ -45,6 +47,7 @@ abstract class AppDatabase: RoomDatabase(){
     abstract fun vehicleDao(): VehicleDao             // Acceso a datos de vehículos
     abstract fun addressDao(): AddressDao             // Acceso a datos de direcciones
     abstract fun requestHistoryDao(): RequestHistoryDao // Acceso a historial de solicitudes
+    abstract fun imageDao(): ImageDao                 // Acceso a imágenes almacenadas como BLOB
 
     companion object {
         // Patrón Singleton para la base de datos
@@ -79,7 +82,8 @@ abstract class AppDatabase: RoomDatabase(){
                                 val vehicleDao = database.vehicleDao()
                                 val addressDao = database.addressDao()
                                 
-                                //precargamos usuarios
+                                // Precargamos usuarios de prueba con contraseñas que cumplen validaciones
+                                // Requisitos: mín. 8 chars, mayúscula, minúscula, número, símbolo
                                 val userSeed = listOf(
                                     UserEntity(
                                         name = "Admin",
@@ -96,8 +100,8 @@ abstract class AppDatabase: RoomDatabase(){
                                     UserEntity(
                                         name = "Usuario Prueba",
                                         email = "test@test.com",
-                                        phone = "+56 9 1234 5678",
-                                        password = "123456"
+                                        phone = "912345678",
+                                        password = "Test123!"
                                     )
                                 )
                                 

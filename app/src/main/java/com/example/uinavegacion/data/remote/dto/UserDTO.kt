@@ -19,6 +19,7 @@ data class UserDTO(
 data class UserRequestDTO(
     val email: String,
     val password: String? = null, // Nullable para permitir actualizaciones sin cambiar contraseña
+    val currentPassword: String? = null, // Contraseña actual (requerida cuando se cambia la contraseña)
     val name: String,
     val phone: String,
     val role: String = "CLIENT"
@@ -30,5 +31,21 @@ data class UserRequestDTO(
 data class LoginRequestDTO(
     val email: String,
     val password: String
+)
+
+/**
+ * DTO para solicitar recuperación de contraseña
+ */
+data class ForgotPasswordRequestDTO(
+    val email: String
+)
+
+/**
+ * DTO para resetear contraseña con token
+ */
+data class ResetPasswordRequestDTO(
+    val email: String,
+    val token: String,
+    val newPassword: String
 )
 

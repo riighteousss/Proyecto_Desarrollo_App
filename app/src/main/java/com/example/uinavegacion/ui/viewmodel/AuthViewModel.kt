@@ -66,30 +66,9 @@ data class RegisterUiState(                                // Estado de la panta
     val errorMsg: String? = null                           // Error global (ej: duplicado)
 )
 
-// ----------------- COLECCIÓN EN MEMORIA (solo para la demo) -----------------
-
-// Modelo mínimo de usuario para la colección
-private data class DemoUser(                               // Datos que vamos a guardar en la colección
-    val name: String,                                      // Nombre
-    val email: String,                                     // Email (lo usamos como “id”)
-    val phone: String,                                     // Teléfono
-    val pass: String                                       // Contraseña en texto (solo demo; no producción)
-)
-
 class AuthViewModel(
     private val repository: UserRepository
 ) : ViewModel() {                         // ViewModel que maneja Login/Registro
-
-    // Colección **estática** en memoria compartida entre instancias del VM (sin storage persistente)
-    companion object {
-        // Lista mutable de usuarios para la demo (se pierde al cerrar la app)
-        private val USERS = mutableListOf(
-            // Usuario por defecto para probar login:
-            DemoUser(name = "Usuario Fixsy", email = "usuario@fixsy.cl", phone = "12345678", pass = "Fixsy123!"),
-            // Usuario de prueba simple:
-            DemoUser(name = "Usuario Prueba", email = "test@test.com", phone = "+56 9 1234 5678", pass = "123456")
-        )
-    }
 
     // Flujos de estado para observar desde la UI
     private val _login = MutableStateFlow(LoginUiState())   // Estado interno (Login)
@@ -299,17 +278,10 @@ class AuthViewModel(
         // Nota: UserPreferences.clearSession() debe llamarse desde la pantalla que maneja el logout
     }
 
-    // Función de debug para ver usuarios registrados
-    fun getRegisteredUsers(): List<String> {
-        return USERS.map { it.email }
-    }
-
     // Obtener el nombre del usuario actualmente logueado
     fun getCurrentUserName(): String? {
         return if (_isLoggedIn.value) {
-            // Buscar el usuario logueado por email (necesitamos guardar el email del usuario logueado)
-            val currentEmail = _login.value.email
-            USERS.firstOrNull { it.email.equals(currentEmail, ignoreCase = true) }?.name
+            _currentUser?.name
         } else {
             null
         }

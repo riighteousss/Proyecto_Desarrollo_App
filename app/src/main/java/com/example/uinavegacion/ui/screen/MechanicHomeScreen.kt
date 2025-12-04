@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.background
@@ -493,4 +494,5 @@ data class ServiceRequest(
     val status: String,
     val price: Int
 )
+
 

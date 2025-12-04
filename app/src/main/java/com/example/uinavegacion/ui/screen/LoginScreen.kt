@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*                           // Material 3
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*                             // remember y Composable
@@ -36,7 +37,8 @@ fun LoginScreenVm(
     vm: AuthViewModel,
     roleViewModel: com.example.uinavegacion.ui.viewmodel.RoleViewModel,
     onLoginOkNavigateHome: () -> Unit,                       // Navega a Home cuando el login es exitoso
-    onGoRegister: () -> Unit                                 // Navega a Registro
+    onGoRegister: () -> Unit,                                // Navega a Registro
+    onGoForgotPassword: () -> Unit = {}                      // Navega a Recuperar Contraseña
 ) {
     //val vm: AuthViewModel = viewModel()                      // Crea/obtiene VM
     val state by vm.login.collectAsStateWithLifecycle()      // Observa el StateFlow en tiempo real
@@ -46,24 +48,23 @@ fun LoginScreenVm(
     val context = LocalContext.current
     val userPrefs = remember { UserPreferences(context) }
 
-    val successMessage = stringResource(R.string.login_success)
+    // Estado para mostrar Dialog de éxito
+    var showSuccessDialog by remember { mutableStateOf(false) }
     
     // Guardar sesión cuando el login es exitoso
     LaunchedEffect(state.success) {
         if (state.success) {
-            snackbarHostState.showSnackbar(successMessage)
+            // Mostrar Dialog de éxito
+            showSuccessDialog = true
             
             // Guardar sesión usando DataStore
-            // Obtener el usuario del microservicio para asegurar que tenemos todos los datos actualizados
             val email = state.email
             
             if (email.isNotEmpty()) {
-                // Obtener usuario del microservicio para asegurar que tenemos todos los datos
                 val result = vm.getUserByEmail(email)
                 if (result.isSuccess) {
                     val userFromServer = result.getOrNull()
                     if (userFromServer != null) {
-                        // Guardar toda la información del usuario que inició sesión
                         userPrefs.saveUserSession(
                             userId = userFromServer.id,
                             email = userFromServer.email,
@@ -71,10 +72,9 @@ fun LoginScreenVm(
                             role = userFromServer.role,
                             phone = userFromServer.phone
                         )
-                        kotlinx.coroutines.delay(500) // Pausa para asegurar que DataStore complete la escritura
+                        kotlinx.coroutines.delay(500)
                     }
                 } else {
-                    // Si falla, intentar usar el usuario en memoria como respaldo
                     val user = vm.getCurrentUser()
                     if (user != null) {
                         userPrefs.saveUserSession(
@@ -88,7 +88,6 @@ fun LoginScreenVm(
                     }
                 }
             } else {
-                // Si no hay email, usar el usuario en memoria
                 val user = vm.getCurrentUser()
                 if (user != null) {
                     userPrefs.saveUserSession(
@@ -102,9 +101,14 @@ fun LoginScreenVm(
                 }
             }
             
-            kotlinx.coroutines.delay(2000) // Esperar un momento para que el usuario vea el mensaje
-            vm.clearLoginResult()                                // Limpia banderas
-            onLoginOkNavigateHome()                              // Navega a Home
+            // ⚠️ CRÍTICO: Delay de 2.5 segundos para que el usuario lea el mensaje
+            kotlinx.coroutines.delay(2500)
+            
+            // Ocultar dialog y navegar
+            showSuccessDialog = false
+            vm.clearLoginResult()
+            kotlinx.coroutines.delay(300) // Pequeño delay para cerrar el dialog suavemente
+            onLoginOkNavigateHome()
         }
     }
 
@@ -121,6 +125,7 @@ fun LoginScreenVm(
             onPassChange = vm::onLoginPassChange,                // Handler pass
             onSubmit = vm::submitLogin,                          // Acción enviar
             onGoRegister = onGoRegister,                         // Ir a Registro
+            onGoForgotPassword = onGoForgotPassword,            // Ir a Recuperar Contraseña
             isMechanic = currentRole == com.example.uinavegacion.ui.viewmodel.UserRole.MECHANIC // Indicar si es mecánico
         )
         
@@ -129,6 +134,35 @@ fun LoginScreenVm(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+        
+        // ⚠️ CRÍTICO: Dialog de éxito visible para el usuario
+        if (showSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = { /* No permitir cerrar manualmente */ },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Éxito",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                title = {
+                    Text(
+                        text = "¡Inicio de sesión exitoso!",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Bienvenido de nuevo. Serás redirigido en un momento...",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    // No mostrar botón, el dialog se cierra automáticamente
+                }
+            )
+        }
     }
 }
 
@@ -148,6 +182,7 @@ private fun LoginScreen(
     onPassChange: (String) -> Unit,                          // Handler cambio password
     onSubmit: () -> Unit,                                    // Acción enviar
     onGoRegister: () -> Unit,                                // Acción ir a registro
+    onGoForgotPassword: () -> Unit = {},                     // Acción ir a recuperar contraseña
     isMechanic: Boolean = false                              // Indica si es login de mecánico
 ) {
     val bg = MaterialTheme.colorScheme.secondaryContainer // Fondo distinto para contraste
@@ -218,19 +253,17 @@ private fun LoginScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()           // Ancho completo
             )
-            /*Ejemplo de animacion login, no cuenta como animacion
-            para la prueba debe ser diferente al de la pagina de kotlin */
-
+            // Animación para mostrar/ocultar error de email
             AnimatedVisibility(
                 visible = emailError != null,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically(),
-            ){
-
-            }
-
-            if (emailError != null) {                        // Muestra mensaje si hay error
-                Text(emailError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            ) {
+                Text(
+                    text = emailError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
 
             Spacer(Modifier.height(8.dp))                    // Espacio
@@ -284,6 +317,16 @@ private fun LoginScreen(
             // ---------- BOTÓN IR A REGISTRO ----------
             OutlinedButton(onClick = onGoRegister, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.login_create_account))
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // ---------- ENLACE RECUPERAR CONTRASEÑA ----------
+            TextButton(
+                onClick = onGoForgotPassword,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("¿Olvidaste tu contraseña?")
             }
             //fin modificacion de formulario
         }

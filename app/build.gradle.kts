@@ -123,10 +123,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
-    // Testing - Librerias para tests unitarios
-    testImplementation("io.mockk:mockk:1.13.12") // Mock para Kotlin
-    testImplementation("org.robolectric:robolectric:4.13") // Simular pruebas en Android test locales
-    
     // Splash Screen API (Android 12+)
     implementation("androidx.core:core-splashscreen:1.0.1")
 }

@@ -1,7 +1,10 @@
 package com.example.uinavegacion.data.local.request
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.uinavegacion.data.local.user.UserEntity
 import java.util.Date
 
 /**
@@ -11,10 +14,11 @@ import java.util.Date
  * - Almacena información completa de cada solicitud
  * - Incluye fecha, estado, descripción y detalles del servicio
  * - Permite consultar el historial del usuario
+ * - Normalizada con Foreign Key a usuarios
  * 
  * CAMPOS PRINCIPALES:
  * - id: Identificador único
- * - userId: ID del usuario que hizo la solicitud
+ * - userId: ID del usuario que hizo la solicitud (FK)
  * - serviceType: Tipo de servicio (Emergencia, Mantenimiento, etc.)
  * - vehicleInfo: Información del vehículo
  * - description: Descripción del problema
@@ -22,11 +26,25 @@ import java.util.Date
  * - createdAt: Fecha de creación
  * - images: Lista de imágenes adjuntas
  */
-@Entity(tableName = "request_history")
+@Entity(
+    tableName = "request_history",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.CASCADE // Si se elimina el usuario, se elimina su historial
+        )
+    ],
+    indices = [
+        Index("userId"), // Índice para mejorar rendimiento de consultas por usuario
+        Index("status") // Índice para filtrar por estado
+    ]
+)
 data class RequestHistoryEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val userId: Long,
+    val userId: Long, // Referencia al usuario (FK)
     val serviceType: String, // "Emergencia", "Mantenimiento", "Revisión", etc.
     val vehicleInfo: String, // Información del vehículo seleccionado
     val description: String, // Descripción del problema
